@@ -35,7 +35,7 @@ function pushEvent(partial) {
           sha: '2aad0e39a45e080d7767d6033800f7d63b86c0c1',
           message: 'fix: CDN_BASE_URL 恢复默认 aiautos.chat 公共服务，用户只需配 CDN_API_KEY\n\n正文首段说明。\n',
           url: 'https://gitee.com/api/v5/repos/example-org/demo-repo/commits/2aad0e39a45e080d7767d6033800f7d63b86c0c1',
-          author: { email: 'dev@example.com', name: 'dev-user' }
+          author: { email: 'ning32@163.com', name: 'ningL32' }
         }
       ]
     },
