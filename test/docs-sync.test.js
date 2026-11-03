@@ -290,6 +290,9 @@ function listMarkdownFiles() {
 
 test('E: README/AGENTS/docs 所有相对 markdown 链接指向存在的文件', () => {
   const broken = [];
+  // docs/internal/mirror/ 是「公开面覆盖副本」：发布时被 publish-mirror.js 放在**镜像仓根**，
+  // 所以其中的链接按仓根解析（而非按它在本仓的物理位置解析）。
+  const MIRROR_OVERLAY_PREFIX = 'docs/internal/mirror/';
   for (const doc of listMarkdownFiles()) {
     // 剥掉围栏代码块与行内代码再扫（代码/正则示例里的 [x](y) 形态不是真链接）
     const md = read(doc).replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
@@ -301,7 +304,10 @@ test('E: README/AGENTS/docs 所有相对 markdown 链接指向存在的文件', 
       if (!noAnchor) continue;
       let target;
       try { target = decodeURIComponent(noAnchor); } catch { target = noAnchor; } // 中文路径 URL 编码
-      const abs = path.resolve(path.dirname(path.join(ROOT, doc)), target);
+      const baseDir = doc.replace(/\\/g, '/').startsWith(MIRROR_OVERLAY_PREFIX)
+        ? ROOT
+        : path.dirname(path.join(ROOT, doc));
+      const abs = path.resolve(baseDir, target);
       if (!fs.existsSync(abs)) broken.push(`${doc} → ${raw}`);
     }
   }
