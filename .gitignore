@@ -1,5 +1,24 @@
+# ---- runtime state (NOT source) ----
+# 插件运行态落在 <DSH_HOME>/fde-console/（config.json / agents.json / members.json / data/）；
+# 仓库根这三份是旧独立版布局遗留，plugin/index.mjs 首启会在 base 下重新生成。
+# 尤其 config.json 可含 webhookOut.url / im.targets[].url 的下游令牌——绝不入库。
 data/
+config.json
+agents.json
+members.json
+.instance.json
+*.db
+*.db-wal
+*.db-shm
+
+# ---- tooling / editor / OS ----
 node_modules/
 *.log
 .mimosa/
 cankao/
+.zcode/
+.env
+.env.*
+.DS_Store
+Thumbs.db
+*.tmp
