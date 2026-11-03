@@ -1,0 +1,7 @@
+好的，以下是拆解结果：
+{"tasks":[
+  {"title":"SSO 周五前上线","desc":"SSO 功能上线","priority":"high","suggestedMemberId":"wang.jianguo","dueHint":"周五","confidence":0.92,"quote":"SSO 这块周五前要上线，小王你来跟进部署文档。","rationale":"明确动作+负责人+时间"},
+  {"title":"整理评审结论纪要","desc":"","priority":"medium","suggestedMemberId":"","dueHint":"今天下班前","confidence":0.75,"quote":"行，我来整理结论纪要。","rationale":"动作明确"},
+  {"title":"提交测试报告","desc":"","priority":"medium","suggestedMemberId":"li.lei","dueHint":"下周一","confidence":0.3,"quote":"下周一把测试环境搭建方案发我","rationale":"疑似重复：测试报告已在看板"}
+],
+"noise":[{"quote":"我看看。","reason":"无明确动作与交付物"}]}

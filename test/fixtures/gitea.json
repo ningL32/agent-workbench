@@ -1,0 +1,162 @@
+{
+  "version": {
+    "version": "1.22.0"
+  },
+  "repos": [
+    {
+      "full_name": "example-org/fde-api",
+      "html_url": "https://gitea.example.com/example-org/fde-api",
+      "default_branch": "main"
+    }
+  ],
+  "feeds": {
+    "example-org/fde-api": [
+      {
+        "id": 1001,
+        "op_type": "create_pull_request",
+        "act_user": {
+          "id": 7,
+          "login": "agent-kilo",
+          "full_name": "Kilo",
+          "username": "agent-kilo"
+        },
+        "ref_name": "",
+        "content": "",
+        "created": "2026-10-16T07:30:00Z",
+        "comment": {
+          "pull_request_url": "https://gitea.example.com/example-org/fde-api/pulls/12",
+          "issue_url": "https://gitea.example.com/example-org/fde-api/issues/12",
+          "html_url": "https://gitea.example.com/example-org/fde-api/issues/12#issuecomment-1201"
+        },
+        "repo": {
+          "id": 1,
+          "name": "fde-api",
+          "full_name": "example-org/fde-api",
+          "owner": {
+            "id": 1,
+            "login": "example-org"
+          }
+        }
+      },
+      {
+        "id": 1002,
+        "op_type": "merge_pull_request",
+        "act_user": {
+          "id": 3,
+          "login": "qianqi",
+          "full_name": "张伟",
+          "username": "qianqi"
+        },
+        "ref_name": "",
+        "content": "",
+        "created": "2026-10-15T09:00:00Z",
+        "comment": {
+          "pull_request_url": "https://gitea.example.com/example-org/fde-api/pulls/11",
+          "issue_url": "https://gitea.example.com/example-org/fde-api/issues/11",
+          "html_url": "https://gitea.example.com/example-org/fde-api/issues/11#issuecomment-1101"
+        },
+        "repo": {
+          "id": 1,
+          "name": "fde-api",
+          "full_name": "example-org/fde-api",
+          "owner": {
+            "id": 1,
+            "login": "example-org"
+          }
+        }
+      },
+      {
+        "id": 1003,
+        "op_type": "commit_repo",
+        "act_user": {
+          "id": 5,
+          "login": "zhangsan",
+          "full_name": "张三",
+          "username": "zhangsan"
+        },
+        "ref_name": "refs/heads/feat/sso",
+        "content": "{\"Commits\":[{\"Sha1\":\"abc1234def0123456789\",\"Message\":\"fix: SSO 回调校验 state\\n\\n回调未校验 state 参数，存在 CSRF 风险，补充白名单校验。\\n\\n回归用例见 tests/sso.spec.js。\",\"AuthorName\":\"张伟\",\"Timestamp\":\"2026-10-16T06:10:00Z\"}],\"HeadCommit\":{\"Sha1\":\"abc1234def0123456789\",\"Message\":\"fix: SSO 回调校验 state\\n\\n回调未校验 state 参数，存在 CSRF 风险，补充白名单校验。\\n\\n回归用例见 tests/sso.spec.js。\",\"AuthorName\":\"张伟\",\"Timestamp\":\"2026-10-16T06:10:00Z\"},\"Len\":1}",
+        "created": "2026-10-16T06:10:00Z",
+        "comment": null,
+        "repo": {
+          "id": 1,
+          "name": "fde-api",
+          "full_name": "example-org/fde-api",
+          "owner": {
+            "id": 1,
+            "login": "example-org"
+          }
+        }
+      },
+      {
+        "id": 1004,
+        "op_type": "create_branch",
+        "act_user": {
+          "id": 5,
+          "login": "zhangsan",
+          "full_name": "张三",
+          "username": "zhangsan"
+        },
+        "ref_name": "feat/sso",
+        "content": "",
+        "created": "2026-10-16T05:00:00Z",
+        "comment": null,
+        "repo": {
+          "id": 1,
+          "name": "fde-api",
+          "full_name": "example-org/fde-api",
+          "owner": {
+            "id": 1,
+            "login": "example-org"
+          }
+        }
+      },
+      {
+        "id": 1005,
+        "op_type": "delete_branch",
+        "act_user": {
+          "id": 4,
+          "login": "zhaoliu",
+          "full_name": "赵六",
+          "username": "zhaoliu"
+        },
+        "ref_name": "chore/bump",
+        "content": "",
+        "created": "2026-10-15T12:00:00Z",
+        "comment": null,
+        "repo": {
+          "id": 1,
+          "name": "fde-api",
+          "full_name": "example-org/fde-api",
+          "owner": {
+            "id": 1,
+            "login": "example-org"
+          }
+        }
+      },
+      {
+        "id": 1006,
+        "op_type": "create_repo",
+        "act_user": {
+          "id": 2,
+          "login": "admin",
+          "full_name": "Administrator",
+          "username": "admin"
+        },
+        "ref_name": "",
+        "content": "",
+        "created": "2026-10-12T16:28:17+08:00",
+        "comment": null,
+        "repo": {
+          "id": 1,
+          "name": "fde-api",
+          "full_name": "example-org/fde-api",
+          "owner": {
+            "id": 1,
+            "login": "example-org"
+          }
+        }
+      }
+    ]
+  }
+}

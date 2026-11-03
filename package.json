@@ -1,0 +1,49 @@
+{
+  "name": "fde-console",
+  "version": "2.9.68",
+  "private": true,
+  "description": "FDE 指挥台 DSH 持久化插件（零 npm 运行时依赖；lib/ 业务层 CJS 经 createRequire 桥接）",
+  "license": "MIT",
+  "icon": "./assets/icon.svg",
+  "main": "./plugin/index.mjs",
+  "engines": {
+    "node": ">=22.13",
+    "dsh": ">=0.2.1-rc.2 <0.3.0-0"
+  },
+  "exports": {
+    ".": "./plugin/index.mjs",
+    "./client": "./plugin/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "plugin/",
+    "lib/",
+    "web/",
+    "assets/",
+    "locale/",
+    "scripts/migrate-data.js",
+    "scripts/migrate-storage.js",
+    "scripts/backup-data.js",
+    "scripts/seed-demo.js",
+    "scripts/mcp-server.mjs",
+    "scripts/write-agent-context.js",
+    "test/helpers/appAssembler.js",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "react"
+      ]
+    }
+  }
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>超级工作台</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <aside class="side">
+    <div class="logo">
+      <i data-icon="bot"></i>
+      <div>超级工作台<small id="side-addr">127.0.0.1:7788</small></div>
+    </div>
+    <nav class="nav" id="nav" aria-label="主导航">
+      <button type="button" data-view="overview"><i data-icon="layout-dashboard"></i>总览</button>
+      <button type="button" data-view="radar"><i data-icon="radar"></i>任务雷达</button>
+      <button type="button" data-view="board"><i data-icon="kanban"></i>任务看板</button>
+      <button type="button" data-view="agents"><i data-icon="bot"></i>智能体</button>
+      <button type="button" data-view="members"><i data-icon="users"></i>成员进度</button>
+      <button type="button" data-view="activity"><i data-icon="activity"></i>团队动态</button>
+      <!-- v2.9.45 学习：仅在设置里配置了知识库后出现（app.js 按 /api/learn/status 控制 hidden） -->
+      <button type="button" data-view="learn" id="nav-learn" hidden><i data-icon="book-open"></i>学习</button>
+      <button type="button" data-view="settings"><i data-icon="settings"></i>设置</button>
+    </nav>
+    <div class="side-foot"><span class="dot" id="foot-dot"></span><span id="foot-text">连接中…</span></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h3 id="view-title">总览</h3>
+      <span class="pill pill-mock" id="pill-mock" hidden>MOCK · 零出网</span>
+      <span class="pill warn" id="pill-multi" hidden>多实例</span>
+      <span class="pill" id="pill-sessions"><span class="dot"></span><span id="pill-sessions-text">—</span></span>
+      <span class="pill" id="pill-gitea"><i data-icon="refresh-cw"></i><span id="pill-gitea-text">—</span></span>
+      <span class="spacer"></span>
+      <div class="attn-wrap">
+        <button type="button" class="btn ghost" id="btn-attn" title="待处理：逾期 / 待验收 / 收件箱待确认" aria-haspopup="true" aria-expanded="false">
+          <i data-icon="bell"></i>待办<span class="attn-badge" id="attn-count" hidden>0</span>
+        </button>
+        <div class="attn-menu" id="attn-menu" hidden>
+          <button type="button" class="attn-row" data-go="board" data-kind="overdue"><span>逾期任务</span><b id="attn-overdue">0</b></button>
+          <button type="button" class="attn-row" data-go="board" data-kind="review"><span>待验收</span><b id="attn-review">0</b></button>
+          <button type="button" class="attn-row" data-go="radar" data-kind="pending"><span>收件箱待确认</span><b id="attn-pending">0</b></button>
+          <div class="attn-foot muted small">轮询 30s · 点击跳到对应视图</div>
+        </div>
+      </div>
+      <button type="button" class="btn ghost" id="btn-search" title="工作搜索（任务 / 会话 / 提交 / 日报）"><i data-icon="search"></i>搜索<span class="kbd">Ctrl K</span></button>
+      <button type="button" class="btn" id="btn-new-task"><i data-icon="plus"></i>新建任务</button>
+    </header>
+
+    <main class="view" id="view"></main>
+
+    <footer class="foot">
+      <span id="foot-version" title="实例运行时版本（随实例重启更新；仓库版本见总览「版本与兼容性」）">运行时 —</span>
+      <span>仅绑定 127.0.0.1</span>
+      <span>凭据运行时读取 · 零落盘</span>
+      <span>Gitea 只读拉取 · SSRF 白名单</span>
+      <span>零构建 · vanilla ES Modules</span>
+    </footer>
+  </div>
+</div>
+<div id="toasts"></div>
+<div id="modal-root"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

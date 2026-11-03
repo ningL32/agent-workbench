@@ -1,0 +1,41 @@
+{
+  "items": [
+    {
+      "token": "obcfixture0001aaaa",
+      "display_info": "产品周会\n<b>关键词:</b> 看板，雷达\n所有者: 测试账号 开始时间: 2026.11.01 09:00:00 时长: 30 分",
+      "meta_data": {
+        "app_link": "https://xxx.feishu.cn/minutes/obcfixture0001aaaa",
+        "description": "所有者: 测试账号 开始时间: 2026.11.01 09:00:00 时长: 30 分"
+      }
+    },
+    {
+      "token": "obcfixture0002bbbb",
+      "display_info": "架构评审会\n所有者: 测试账号 开始时间: 2026.10.31 14:00:00 时长: 45 分",
+      "meta_data": {
+        "app_link": "",
+        "description": "所有者: 测试账号 开始时间: 2026.10.31 14:00:00 时长: 45 分"
+      }
+    },
+    {
+      "token": "obcfixture0003cccc",
+      "display_info": "钓鱼域听记\n所有者: 测试账号 开始时间: 2026.10.30 10:00:00 时长: 10 分",
+      "meta_data": {
+        "app_link": "https://evil.example.com/minutes/obcfixture0003cccc",
+        "description": "所有者: 测试账号 开始时间: 2026.10.30 10:00:00 时长: 10 分"
+      }
+    },
+    {
+      "token": "obcfixture0004dddd",
+      "display_info": "无逐字稿的会\n所有者: 测试账号 开始时间: 2026.10.29 10:00:00 时长: 8 分",
+      "meta_data": {
+        "app_link": "https://xxx.feishu.cn/minutes/obcfixture0004dddd",
+        "description": "所有者: 测试账号 开始时间: 2026.10.29 10:00:00 时长: 8 分"
+      }
+    }
+  ],
+  "transcripts": {
+    "obcfixture0001aaaa": "2026-11-01 09:00:00 CST|30min\n\nKeywords:\n看板、雷达\n\nSpeaker 1 00:00:02.500 \n大家好，开始产品周会。\n\nSpeaker 2 00:01:00.000 \n上周上线了任务看板。补充一下，崩溃率降到了 0.1%。",
+    "obcfixture0002bbbb": "Speaker 1 00:00:01.000 \n架构评审开始。\nSpeaker 2 00:00:30.000 \n存储层迁移方案我讲一下。",
+    "obcfixture0003cccc": "Speaker 1 00:00:01.000 \n这条应该在白名单检查时被丢弃。"
+  }
+}

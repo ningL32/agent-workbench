@@ -1,0 +1,2363 @@
+{
+  "overview": {
+    "tasks": {
+      "todo": 2,
+      "doing": 4,
+      "review": 1,
+      "done": 3,
+      "overdue": 1
+    },
+    "agents": 9,
+    "sessionsRunning": 2,
+    "gatewayExternalRunning": 1,
+    "activities24h": 6,
+    "gitea": {
+      "ok": true,
+      "lastPollAt": "2026-10-16T08:00:00Z",
+      "lastError": null
+    }
+  },
+  "dueAnchor": "2026-10-16",
+  "diaryAnchor": "2026-10-16",
+  "columns": [
+    {
+      "id": "todo",
+      "name": "待分配",
+      "order": 1
+    },
+    {
+      "id": "doing",
+      "name": "进行中",
+      "order": 2
+    },
+    {
+      "id": "review",
+      "name": "待验证",
+      "order": 3
+    },
+    {
+      "id": "done",
+      "name": "已完成",
+      "order": 4
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t-m4ek9a-3f21",
+      "title": "接入 SSO 登录",
+      "status": "doing",
+      "priority": "high",
+      "dueDate": "2026-10-13",
+      "desc": "对接企业 IdP 的 SAML 元数据配置，完成单点登录跳转\n验收标准：测试账号免密登录成功，登出后会话立即失效",
+      "agentId": "claude",
+      "memberId": "qianqi",
+      "acceptorId": "qianqi",
+      "repo": "example-org/fde-api",
+      "branch": "feat/sso",
+      "prUrl": "https://gitea.example.com/example-org/fde-api/pulls/12",
+      "notes": "优先级高，参考 docs/auth.md",
+      "completedAt": null,
+      "createdAt": "2026-10-16T01:00:00Z",
+      "updatedAt": "2026-10-16T07:30:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-16T01:00:00Z"
+        },
+        {
+          "type": "assign",
+          "from": null,
+          "to": "Claude Code",
+          "detail": "负责智能体：Claude Code",
+          "at": "2026-10-16T01:05:00Z"
+        },
+        {
+          "type": "assign",
+          "from": null,
+          "to": "张伟",
+          "detail": "负责成员：张伟",
+          "at": "2026-10-16T01:06:00Z"
+        },
+        {
+          "type": "priority",
+          "from": "medium",
+          "to": "high",
+          "at": "2026-10-16T02:00:00Z"
+        },
+        {
+          "type": "due",
+          "from": null,
+          "to": "2026-10-13",
+          "at": "2026-10-16T02:01:00Z"
+        },
+        {
+          "type": "memo",
+          "from": null,
+          "to": null,
+          "detail": "SSO 技术评审：“SAML 断言的 NameID 要用 persistent 格式，别用 email。”",
+          "at": "2026-10-16T04:20:00Z"
+        },
+        {
+          "type": "status",
+          "from": "待分配",
+          "to": "进行中",
+          "at": "2026-10-16T06:00:00Z"
+        },
+        {
+          "type": "artifact",
+          "from": null,
+          "to": "https://gitea.example.com/example-org/fde-api/pulls/12",
+          "detail": "挂接成果：PR · example-org/fde-api",
+          "at": "2026-10-16T07:31:00Z"
+        },
+        {
+          "type": "artifact",
+          "from": null,
+          "to": "https://gitea.example.com/example-org/fde-api/commit/9f2c1ab",
+          "detail": "自动归因：commit · example-org/fde-api",
+          "at": "2026-10-16T07:42:00Z"
+        },
+        {
+          "type": "accept",
+          "from": null,
+          "to": "张伟",
+          "detail": "验收人：张伟",
+          "at": "2026-10-16T07:45:00Z"
+        }
+      ],
+      "artifacts": [
+        {
+          "url": "https://gitea.example.com/example-org/fde-api/pulls/12",
+          "kind": "pr",
+          "repo": "example-org/fde-api",
+          "ref": "12",
+          "at": "2026-10-16T07:31:00Z"
+        },
+        {
+          "url": "https://gitea.example.com/example-org/fde-api/commit/9f2c1ab",
+          "kind": "commit",
+          "repo": "example-org/fde-api",
+          "ref": "9f2c1ab",
+          "attributedBy": "auto",
+          "at": "2026-10-16T07:42:00Z"
+        }
+      ],
+      "origin": {
+        "type": "manual",
+        "relatedMemos": [
+          {
+            "quote": "SAML 断言的 NameID 要用 persistent 格式，别用 email。",
+            "note": "已按 persistent 实现，评审通过",
+            "at": "2026-10-16T03:20:00Z"
+          },
+          {
+            "quote": "登出之后会话要立即失效，不能沿用旧 token 直接进系统。",
+            "note": "待联调验证 token 吊销路径",
+            "at": "2026-10-16T07:10:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t-m4ekb2-8c07",
+      "title": "修复会话存活 PID 复用误报",
+      "status": "doing",
+      "priority": "medium",
+      "dueDate": "2026-10-16",
+      "desc": "Windows 下 PID 复用导致 process.kill(pid,0) 把无关进程误判为存活会话\n验收标准：复现脚本连续 1000 次检测零误报",
+      "agentId": "opencode",
+      "memberId": "zhaoliu",
+      "acceptorId": null,
+      "repo": "example-org/fde-api",
+      "branch": "fix/session-alive",
+      "prUrl": null,
+      "notes": "sessions.js process.kill(pid,0)",
+      "completedAt": null,
+      "createdAt": "2026-10-16T06:40:00Z",
+      "updatedAt": "2026-10-16T07:40:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-16T06:40:00Z"
+        },
+        {
+          "type": "assign",
+          "from": null,
+          "to": "OpenCode",
+          "detail": "负责智能体：OpenCode",
+          "at": "2026-10-16T06:41:00Z"
+        },
+        {
+          "type": "status",
+          "from": "待分配",
+          "to": "进行中",
+          "at": "2026-10-16T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4ekc5-d4e9",
+      "title": "Gitea 动态流轮询缓存",
+      "status": "doing",
+      "priority": "low",
+      "dueDate": null,
+      "agentId": "mcode",
+      "acceptorId": null,
+      "repo": "example-org/fde-harness",
+      "branch": "feat/activity-cache",
+      "prUrl": null,
+      "notes": "分页拉取组织仓库最近 7 天",
+      "completedAt": null,
+      "createdAt": "2026-10-16T05:00:00Z",
+      "updatedAt": "2026-10-16T07:00:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-16T05:00:00Z"
+        },
+        {
+          "type": "status",
+          "from": "待分配",
+          "to": "进行中",
+          "at": "2026-10-16T05:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4d1x0-22b6",
+      "title": "动态匹配算法性能剖析",
+      "status": "doing",
+      "priority": "medium",
+      "dueDate": "2026-10-17",
+      "desc": "逐条 indexOf 改为预编译正则 + 关键词倒排\n验收标准：1000 任务规模下匹配耗时不高于 50ms",
+      "agentId": "codex",
+      "acceptorId": null,
+      "repo": "example-org/fde-harness",
+      "branch": "perf/match",
+      "prUrl": null,
+      "notes": "子串匹配改为预编译正则",
+      "completedAt": null,
+      "createdAt": "2026-10-15T06:00:00Z",
+      "updatedAt": "2026-10-15T06:00:00Z",
+      "events": []
+    },
+    {
+      "id": "t-m4ekd8-71aa",
+      "title": "agents.json 内置 9 个 CLI 注册表",
+      "status": "review",
+      "priority": "medium",
+      "dueDate": "2026-10-18",
+      "desc": "梳理 9 个内置 CLI 的命令模板差异，统一 {briefing} 占位约定，并补齐 Windows 路径转义与引号规则的差异说明文档和回归用例\n验收标准：SPEC 增补对应章节，全部既有用例通过",
+      "agentId": "kilo",
+      "acceptorId": "qianqi",
+      "repo": "example-org/fde-harness",
+      "branch": "feat/agent-registry",
+      "prUrl": null,
+      "notes": "commandTemplate 一律含 {briefing}",
+      "completedAt": null,
+      "createdAt": "2026-10-16T03:00:00Z",
+      "updatedAt": "2026-10-16T05:30:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-16T03:00:00Z"
+        },
+        {
+          "type": "assign",
+          "from": null,
+          "to": "Kilo",
+          "detail": "负责智能体：Kilo",
+          "at": "2026-10-16T03:01:00Z"
+        },
+        {
+          "type": "status",
+          "from": "进行中",
+          "to": "待验证",
+          "at": "2026-10-16T05:30:00Z"
+        },
+        {
+          "type": "accept",
+          "from": null,
+          "to": "张伟",
+          "detail": "验收人：张伟",
+          "at": "2026-10-16T05:45:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4eke1-b902",
+      "title": "整理 demo-hub 技能目录结构",
+      "status": "todo",
+      "priority": "high",
+      "dueDate": "2026-10-23",
+      "agentId": null,
+      "acceptorId": null,
+      "repo": "example-org/demo-hub",
+      "branch": null,
+      "prUrl": null,
+      "notes": "清退重复的 SKILL.md 副本",
+      "completedAt": null,
+      "createdAt": "2026-10-16T02:00:00Z",
+      "updatedAt": "2026-10-16T02:00:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-16T02:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4ekf4-5c3d",
+      "title": "编写 FDE 周报模板",
+      "status": "todo",
+      "priority": "low",
+      "dueDate": null,
+      "agentId": "kilo",
+      "acceptorId": null,
+      "repo": null,
+      "branch": null,
+      "prUrl": null,
+      "notes": "",
+      "completedAt": null,
+      "createdAt": "2026-10-15T09:00:00Z",
+      "updatedAt": "2026-10-15T11:20:00Z",
+      "events": [
+        {
+          "type": "artifact",
+          "from": null,
+          "to": "https://gitea.example.com/example-org/fde-harness/commit/c3d4e5f",
+          "detail": "自动归因：commit · example-org/fde-harness",
+          "at": "2026-10-15T11:20:00Z"
+        }
+      ],
+      "artifacts": [
+        {
+          "url": "https://gitea.example.com/example-org/fde-harness/commit/c3d4e5f",
+          "kind": "commit",
+          "repo": "example-org/fde-harness",
+          "ref": "c3d4e5f",
+          "attributedBy": "auto",
+          "at": "2026-10-15T11:20:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4ejz7-f108",
+      "title": "B3 SSRF 白名单与凭据红线",
+      "status": "done",
+      "priority": "low",
+      "dueDate": null,
+      "agentId": "goose",
+      "acceptorId": "zhaoliu",
+      "repo": "example-org/fde-harness",
+      "branch": "test/b3-ssrf",
+      "prUrl": "https://gitea.example.com/example-org/fde-api/pulls/9",
+      "notes": "含凭据落盘扫描用例",
+      "completedAt": "2026-10-15T09:30:00Z",
+      "createdAt": "2026-10-15T02:00:00Z",
+      "updatedAt": "2026-10-15T09:30:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-15T02:00:00Z"
+        },
+        {
+          "type": "assign",
+          "from": null,
+          "to": "Goose",
+          "detail": "负责智能体：Goose",
+          "at": "2026-10-15T02:05:00Z"
+        },
+        {
+          "type": "status",
+          "from": "待分配",
+          "to": "进行中",
+          "at": "2026-10-15T03:30:00Z"
+        },
+        {
+          "type": "due",
+          "from": null,
+          "to": "2026-10-17",
+          "at": "2026-10-15T04:00:00Z"
+        },
+        {
+          "type": "priority",
+          "from": "medium",
+          "to": "low",
+          "at": "2026-10-15T06:00:00Z"
+        },
+        {
+          "type": "edit",
+          "from": null,
+          "to": null,
+          "detail": "更新了备注",
+          "at": "2026-10-15T08:00:00Z"
+        },
+        {
+          "type": "due",
+          "from": "2026-10-17",
+          "to": null,
+          "at": "2026-10-15T09:00:00Z"
+        },
+        {
+          "type": "accept",
+          "from": null,
+          "to": "赵六",
+          "detail": "验收人：赵六",
+          "at": "2026-10-15T09:10:00Z"
+        },
+        {
+          "type": "status",
+          "from": "进行中",
+          "to": "已完成",
+          "at": "2026-10-15T09:30:00Z"
+        },
+        {
+          "type": "completed",
+          "from": null,
+          "to": null,
+          "detail": "任务完成",
+          "at": "2026-10-15T09:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4ejy3-a645",
+      "title": "SPEC 架构规格 v1.1",
+      "status": "done",
+      "priority": "medium",
+      "dueDate": null,
+      "agentId": "claude",
+      "acceptorId": "lisi",
+      "repo": "example-org/fde-harness",
+      "branch": "docs/spec",
+      "prUrl": null,
+      "notes": "新增 F5 成员进度包",
+      "completedAt": "2026-10-15T12:00:00Z",
+      "createdAt": "2026-10-14T01:00:00Z",
+      "updatedAt": "2026-10-15T12:00:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-14T01:00:00Z"
+        },
+        {
+          "type": "accept",
+          "from": null,
+          "to": "李四",
+          "detail": "验收人：李四",
+          "at": "2026-10-15T11:30:00Z"
+        },
+        {
+          "type": "status",
+          "from": "进行中",
+          "to": "已完成",
+          "at": "2026-10-15T12:00:00Z"
+        },
+        {
+          "type": "completed",
+          "from": null,
+          "to": null,
+          "detail": "任务完成",
+          "at": "2026-10-15T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-m4ejx9-0d73",
+      "title": "看板列管理（增删改名）",
+      "status": "done",
+      "priority": "medium",
+      "dueDate": null,
+      "agentId": "crush",
+      "acceptorId": null,
+      "repo": "example-org/fde-harness",
+      "branch": "feat/column-mgmt",
+      "prUrl": null,
+      "notes": "删非空列返回 409",
+      "completedAt": "2026-10-15T08:00:00Z",
+      "createdAt": "2026-10-15T03:00:00Z",
+      "updatedAt": "2026-10-15T08:00:00Z",
+      "events": []
+    },
+    {
+      "id": "t-demo-origin",
+      "title": "登录超时阈值调整评审",
+      "status": "todo",
+      "agentId": null,
+      "memberId": null,
+      "acceptorId": null,
+      "repo": null,
+      "branch": null,
+      "prUrl": null,
+      "notes": "",
+      "desc": "确认登录超时阈值定为 30 分钟",
+      "dueDate": null,
+      "priority": "medium",
+      "completedAt": null,
+      "createdAt": "2026-10-17T15:49:33.358Z",
+      "updatedAt": "2026-10-17T15:49:33.358Z",
+      "events": [],
+      "origin": {
+        "type": "inbox",
+        "refId": "cand-conf05",
+        "quote": "登录超时阈值定成 30 分钟，今天下班前出评审结论。"
+      }
+    },
+    {
+      "id": "t-topo-manual",
+      "title": "客户成功案例整理",
+      "status": "doing",
+      "agentId": null,
+      "memberId": "demo.user",
+      "acceptorId": "zhaoliu",
+      "repo": null,
+      "branch": null,
+      "prUrl": null,
+      "notes": "纯人工任务：无派生 AI 会话，交付物为共享文档不入 git",
+      "desc": "人工整理近一季客户成功案例，输出共享文档，供周报与复盘引用。",
+      "dueDate": null,
+      "priority": "low",
+      "completedAt": null,
+      "createdAt": "2026-10-15T10:00:00Z",
+      "updatedAt": "2026-10-16T03:20:00Z",
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-15T10:00:00Z"
+        },
+        {
+          "type": "status",
+          "from": "待分配",
+          "to": "进行中",
+          "detail": "",
+          "at": "2026-10-16T03:20:00Z"
+        }
+      ]
+    },
+    {
+      "id": "t-topo-report",
+      "title": "FDE 周报模板定稿",
+      "status": "done",
+      "agentId": null,
+      "memberId": "lisi",
+      "acceptorId": "zhangsan",
+      "repo": "example-org/fde-console",
+      "branch": "task/t-topo-report",
+      "prUrl": null,
+      "notes": "",
+      "desc": "定稿 FDE 周报模板并固化为生成脚本，交付物已合入主干。",
+      "dueDate": null,
+      "priority": "medium",
+      "completedAt": "2026-10-15T09:40:00Z",
+      "createdAt": "2026-10-14T08:00:00Z",
+      "updatedAt": "2026-10-15T09:40:00Z",
+      "artifacts": [
+        {
+          "url": "https://gitea.example.com/example-org/fde-console/commit/4ea7b21",
+          "kind": "commit",
+          "repo": "example-org/fde-console",
+          "ref": "4ea7b21",
+          "at": "2026-10-15T09:35:00Z"
+        }
+      ],
+      "events": [
+        {
+          "type": "created",
+          "from": null,
+          "to": "todo",
+          "detail": "",
+          "at": "2026-10-14T08:00:00Z"
+        },
+        {
+          "type": "artifact",
+          "from": null,
+          "to": "https://gitea.example.com/example-org/fde-console/commit/4ea7b21",
+          "detail": "挂接成果：commit · example-org/fde-console",
+          "at": "2026-10-15T09:35:00Z"
+        },
+        {
+          "type": "completed",
+          "from": null,
+          "to": null,
+          "detail": "任务完成",
+          "at": "2026-10-15T09:40:00Z"
+        }
+      ]
+    }
+  ],
+  "diaries": {
+    "t-m4ek9a-3f21": [
+      {
+        "date": "2026-10-16",
+        "content": "完成 SAML 回调地址编码修正，测试账号免密登录自测通过。\n卡点：网关侧白名单未放行测试环境域名，已提工单等处理。\n下一步：联调登出后会话失效（token 吊销路径）。",
+        "updatedAt": "2026-10-16T07:50:00Z"
+      },
+      {
+        "date": "2026-10-15",
+        "content": "通读 IdP 元数据文档，确定 NameID 用 persistent 格式。\n本地起 mock IdP 跑通登录跳转，尚未接真实元数据。",
+        "updatedAt": "2026-10-15T19:02:00Z"
+      },
+      {
+        "date": "2026-10-13",
+        "content": "评审结论同步：NameID 用 persistent 格式，弃用 email 方案。\n梳理登出失效两条路径（前端清理 + 后端 token 吊销），排期后者。",
+        "updatedAt": "2026-10-13T18:30:00Z"
+      }
+    ],
+    "t-m4ekb2-8c07": [
+      {
+        "date": "2026-10-15",
+        "content": "定位到 PID 复用来自短命进程快速回收，复现脚本 1000 次检测出现 3 次误报。\n开始加进程启动时间校验，预计明天出修复补丁。",
+        "updatedAt": "2026-10-15T20:10:00Z"
+      }
+    ],
+    "t-topo-manual": [
+      {
+        "date": "2026-10-14",
+        "content": "整理完成 6 个客户成功案例初稿，其中 2 个待客户授权确认。\n初稿已共享至团队空间，周报可先引用脱敏版。",
+        "updatedAt": "2026-10-14T17:40:00Z"
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "command": "claude",
+      "commandTemplate": "claude \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "command": "opencode",
+      "commandTemplate": "opencode \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "kilo",
+      "name": "Kilo",
+      "command": "kilo",
+      "commandTemplate": "kilo \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "mcode",
+      "name": "Mcode",
+      "command": "mcode",
+      "commandTemplate": "mcode \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "goose",
+      "name": "Goose",
+      "command": "goose",
+      "commandTemplate": "goose \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "command": "codex",
+      "commandTemplate": "codex \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "crush",
+      "name": "Crush",
+      "command": "crush",
+      "commandTemplate": "crush \"{briefing}\"",
+      "builtin": true,
+      "enabled": false
+    },
+    {
+      "id": "dsh",
+      "name": "DSH",
+      "command": "dsh",
+      "commandTemplate": "dsh \"{briefing}\"",
+      "builtin": true,
+      "enabled": false
+    },
+    {
+      "id": "demo-team",
+      "name": "DemoBot",
+      "command": "demo-team",
+      "commandTemplate": "demo-team \"{briefing}\"",
+      "builtin": true,
+      "enabled": true
+    }
+  ],
+  "activities": [
+    {
+      "id": "a-80",
+      "type": "commit_pushed",
+      "actor": "claude",
+      "repo": "example-org/fde-api",
+      "branch": "feat/sso",
+      "title": "fix(sso): 回调地址编码修正",
+      "sha": "9f2c1ab",
+      "messageBody": "回调地址 query 部分未做 URL 编码，IdP 校验失败；补 encodeURIComponent。",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/9f2c1ab",
+      "occurredAt": "2026-10-16T07:42:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": ["t-m4ek9a-3f21"]
+    },
+    {
+      "id": "a-79",
+      "type": "commit_pushed",
+      "actor": "opencode",
+      "repo": "example-org/fde-api",
+      "branch": "task/t-m4ekb2-8c07",
+      "title": "[demo-team] chore: 同步会话进度心跳",
+      "sha": "b4d2f9e8",
+      "messageBody": "",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/b4d2f9e8",
+      "occurredAt": "2026-10-16T07:54:30Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekb2-8c07"
+      ]
+    },
+    {
+      "id": "a-78",
+      "type": "commit_pushed",
+      "actor": "opencode",
+      "repo": "example-org/fde-api",
+      "branch": "task/t-m4ekb2-8c07",
+      "title": "[demo-team] chore: 记录验收清单勾选项",
+      "sha": "c7e81aa4",
+      "messageBody": "",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/c7e81aa4",
+      "occurredAt": "2026-10-16T07:54:02Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekb2-8c07"
+      ]
+    },
+    {
+      "id": "a-77",
+      "type": "commit_pushed",
+      "actor": "opencode",
+      "repo": "example-org/fde-api",
+      "branch": "task/t-m4ekb2-8c07",
+      "title": "[demo-team] fix: 心跳写盘节流为 5s",
+      "sha": "d93f0172",
+      "messageBody": "去掉 1s 一次的写盘抖动，统一节流到 5s，与轮询周期对齐。",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/d93f0172",
+      "occurredAt": "2026-10-16T07:53:40Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekb2-8c07"
+      ]
+    },
+    {
+      "id": "a-76",
+      "type": "commit_pushed",
+      "actor": "opencode",
+      "repo": "example-org/fde-api",
+      "branch": "task/t-m4ekb2-8c07",
+      "title": "[demo-team] chore: 启动时拉取看板快照",
+      "sha": "e2a4b88c",
+      "messageBody": "",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/e2a4b88c",
+      "occurredAt": "2026-10-16T07:53:15Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekb2-8c07"
+      ]
+    },
+    {
+      "id": "a-75",
+      "type": "commit_pushed",
+      "actor": "opencode",
+      "repo": "example-org/fde-api",
+      "branch": "task/t-m4ekb2-8c07",
+      "title": "[demo-team] chore: 会话目录侦测初始化",
+      "sha": "f0b6c21a",
+      "messageBody": "",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/f0b6c21a",
+      "occurredAt": "2026-10-16T07:52:48Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekb2-8c07"
+      ]
+    },
+    {
+      "id": "a-74",
+      "type": "commit_pushed",
+      "actor": "qianqi",
+      "repo": "example-org/demo-hub",
+      "branch": "main",
+      "title": "docs: 派单模板补充验收人字段说明",
+      "sha": "77aa1c3",
+      "messageBody": "验收人字段 v2.0 起全链路生效：任务表单可指定，交付后徽标提示对应成员验收，避免做完没人认。",
+      "url": "https://gitea.example.com/example-org/demo-hub/commit/77aa1c3",
+      "occurredAt": "2026-10-16T07:48:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": []
+    },
+    {
+      "id": "a-73",
+      "type": "commit_pushed",
+      "actor": "qianqi",
+      "repo": "example-org/demo-hub",
+      "branch": "main",
+      "title": "fix: 修复周报脚本时区偏移",
+      "sha": "18cc9d0",
+      "messageBody": "",
+      "url": "https://gitea.example.com/example-org/demo-hub/commit/18cc9d0",
+      "occurredAt": "2026-10-16T07:46:30Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": []
+    },
+    {
+      "id": "a-72",
+      "type": "branch_deleted",
+      "actor": null,
+      "repo": "example-org/fde-api",
+      "branch": "feat/tmp-probe",
+      "title": "删除分支 feat/tmp-probe",
+      "url": null,
+      "occurredAt": "2026-10-16T07:44:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": []
+    },
+    {
+      "id": "a-71",
+      "type": "commit_pushed",
+      "actor": "opencode",
+      "repo": "example-org/fde-api",
+      "branch": "fix/session-alive",
+      "title": "fix: 会话存活检测去除 PID 复用误报",
+      "sha": "9f2c1ab8",
+      "messageBody": "PID 复用误报的根因是短命进程退出后 PID 被系统复用，process.kill(pid,0) 会把无关进程误判为存活。改为比对启动命令行指纹，复现脚本连续 1000 次检测零误报。",
+      "url": "https://gitea.example.com/example-org/fde-api/commit/9f2c1ab",
+      "occurredAt": "2026-10-16T07:40:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekb2-8c07"
+      ]
+    },
+    {
+      "id": "a-70",
+      "type": "pr_opened",
+      "actor": "kilo",
+      "repo": "example-org/fde-api",
+      "branch": "feat/sso",
+      "title": "feat: SSO 登录",
+      "url": "https://gitea.example.com/example-org/fde-api/pulls/12",
+      "occurredAt": "2026-10-16T07:30:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ek9a-3f21"
+      ]
+    },
+    {
+      "id": "a-69",
+      "type": "commit_pushed",
+      "actor": "qianqi",
+      "repo": "example-org/demo-hub",
+      "branch": "main",
+      "title": "docs: 更新周报模板与派单说明",
+      "sha": "44b02de",
+      "messageBody": "",
+      "url": "https://gitea.example.com/example-org/demo-hub/commit/44b02de",
+      "occurredAt": "2026-10-16T07:20:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": []
+    },
+    {
+      "id": "a-68",
+      "type": "pr_merged",
+      "actor": "claude",
+      "repo": "example-org/demo-hub",
+      "branch": null,
+      "title": "docs: 派单模板补充验收命令规范",
+      "url": "https://gitea.example.com/example-org/demo-hub/pulls/28",
+      "occurredAt": "2026-10-16T06:30:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": []
+    },
+    {
+      "id": "a-67",
+      "type": "branch_created",
+      "actor": "kilo",
+      "repo": "example-org/fde-harness",
+      "branch": "feat/agent-registry",
+      "title": "新建分支 feat/agent-registry",
+      "url": "https://gitea.example.com/example-org/fde-harness/src/feat/agent-registry",
+      "occurredAt": "2026-10-16T05:00:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ekd8-71aa"
+      ]
+    },
+    {
+      "id": "a-66",
+      "type": "pr_opened",
+      "actor": "goose",
+      "repo": "example-org/fde-api",
+      "branch": "test/b3-ssrf",
+      "title": "test: SSRF 白名单与凭据落盘扫描用例",
+      "url": "https://gitea.example.com/example-org/fde-api/pulls/9",
+      "occurredAt": "2026-10-16T03:00:00Z",
+      "fetchedAt": "2026-10-16T08:00:00Z",
+      "matchedTaskIds": [
+        "t-m4ejz7-f108"
+      ]
+    }
+  ],
+  "repos": [
+    { "fullName": "example-org/demo-hub", "name": "demo-hub", "private": true, "updatedAt": "2026-10-19T08:00:00Z" },
+    { "fullName": "example-org/fde-api", "name": "fde-api", "private": false, "updatedAt": "2026-10-18T03:20:00Z" },
+    { "fullName": "example-org/fde-harness", "name": "fde-harness", "private": false, "updatedAt": "2026-10-19T02:45:00Z" },
+    { "fullName": "example-org/fde-console", "name": "fde-console", "private": true, "updatedAt": "2026-10-17T11:10:00Z" },
+    { "fullName": "example-org/common-work", "name": "common-work", "private": false, "updatedAt": "2026-10-15T09:00:00Z" }
+  ],
+  "members": [
+    {
+      "id": "workbuddy",
+      "name": "WorkBuddy",
+      "kind": "agent",
+      "role": "桌面 Agent",
+      "manual": false,
+      "status": "working",
+      "currentTask": {
+        "id": "t-m4ek9a-3f21",
+        "title": "接入 SSO 登录",
+        "status": "doing",
+        "ageSec": 23400,
+        "sinceUpdateSec": 1800,
+        "progress": 0.6
+      },
+      "lastActivityAt": "2026-10-16T07:30:00Z",
+      "todayCommits": 0,
+      "openPrs": 0,
+      "weekDone": 2,
+      "session": {
+        "id": "wb-f2a91c30",
+        "alive": true
+      }
+    },
+    {
+      "id": "qianqi",
+      "name": "张伟",
+      "kind": "human",
+      "role": "后端",
+      "manual": false,
+      "giteaLogin": "qianqi",
+      "status": "working",
+      "currentTask": {
+        "id": "t-m4ek9a-3f21",
+        "title": "接入 SSO 登录",
+        "status": "doing",
+        "ageSec": 23400,
+        "sinceUpdateSec": 1800,
+        "progress": 0.6
+      },
+      "lastActivityAt": "2026-10-16T07:30:00Z",
+      "todayCommits": 1,
+      "openPrs": 0,
+      "weekDone": 0,
+      "session": null,
+      "aliases": [
+        "建国"
+      ]
+    },
+    {
+      "id": "zhaoliu",
+      "name": "赵六",
+      "kind": "human",
+      "role": "前端",
+      "manual": true,
+      "giteaLogin": "zhaoliu",
+      "enabled": true,
+      "status": "working",
+      "currentTask": {
+        "id": "t-m4ekb2-8c07",
+        "title": "修复会话存活 PID 复用误报",
+        "status": "doing",
+        "ageSec": 4800,
+        "sinceUpdateSec": 1200,
+        "progress": 0.45
+      },
+      "lastActivityAt": "2026-10-16T04:30:00Z",
+      "todayCommits": 0,
+      "openPrs": 0,
+      "weekDone": 0,
+      "session": null
+    },
+    {
+      "id": "demo.user",
+      "name": "孙倩",
+      "kind": "human",
+      "role": "QA",
+      "manual": true,
+      "giteaLogin": "sunqian",
+      "enabled": false,
+      "status": "idle",
+      "currentTask": null,
+      "lastActivityAt": "2026-10-14T09:00:00Z",
+      "todayCommits": 0,
+      "openPrs": 0,
+      "weekDone": 0,
+      "session": null
+    },
+    {
+      "id": "lisi",
+      "name": "李四",
+      "kind": "human",
+      "role": "硅谷驻场",
+      "manual": false,
+      "giteaLogin": "lisi",
+      "status": "idle",
+      "currentTask": null,
+      "lastActivityAt": "2026-10-15T02:30:00Z",
+      "todayCommits": 0,
+      "openPrs": 0,
+      "weekDone": 0,
+      "session": null
+    },
+    {
+      "id": "zhangsan",
+      "name": "张三",
+      "kind": "human",
+      "role": "测试",
+      "manual": false,
+      "giteaLogin": "zhangsan",
+      "status": "idle",
+      "currentTask": null,
+      "lastActivityAt": "2026-10-15T06:20:00Z",
+      "todayCommits": 0,
+      "openPrs": 0,
+      "weekDone": 0,
+      "session": null
+    }
+  ],
+  "agentActivity": {
+    "items": [
+      {
+        "agent": "zcode",
+        "agentName": "ZCode",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "title": "智能体动态面板：活动流渲染、来源健康徽标与 30s 轮询合并",
+        "preview": "读取 web/js/views/agents.js（754 行）定位面板插入点，新增活动流列表与来源徽标条；preview 走两行截断、title 悬浮全文；轮询并入既有 10s 会话 tick 做 30s 节流，避免双定时器漂移；顺手核对 esc() 转义对 projectId 反斜杠的覆盖，截图存 %TEMP%\\agent-act\\ 待验收。",
+        "startedAgoSec": 5400,
+        "lastActiveAgoSec": 75,
+        "state": "active"
+      },
+      {
+        "agent": "zcode",
+        "agentName": "ZCode",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "title": "回归修复：任务拓扑面板树视图列名显示",
+        "preview": "拓扑树视图在自定义列改名后仍显示内置中文名，定位到 columns 缓存未随 PATCH 刷新；补一行 syncTopology 触发并回归七视图。",
+        "startedAgoSec": 10800,
+        "lastActiveAgoSec": 9000,
+        "state": "completed"
+      },
+      {
+        "agent": "zcode",
+        "agentName": "ZCode",
+        "projectId": "E:\\ws\\fde-cankao",
+        "title": "原型比对：确认稿动态面板视觉走查",
+        "preview": "对照确认稿逐项核对动态面板字重 / 间距 / 徽标透明度，产出 3 条偏差备注。",
+        "startedAgoSec": 100000,
+        "lastActiveAgoSec": 96000,
+        "state": "completed"
+      },
+      {
+        "agent": "claude",
+        "agentName": "Claude Code",
+        "projectId": "E:\\ws\\member-console",
+        "title": "成员进度页聚合视图：currentTask 附带截止与优先级",
+        "preview": "在 /api/members 聚合里带出 dueDate/priority（契约 v1.4），徽标复用 dueBadge 同一语言；别名匹配改为大小写不敏感，回归 members 测试 17 项全绿。",
+        "startedAgoSec": 3600,
+        "lastActiveAgoSec": 240,
+        "state": "active"
+      },
+      {
+        "agent": "claude",
+        "agentName": "Claude Code",
+        "projectId": "E:\\ws\\docs-site",
+        "title": "部署文档更新：插件态路由前缀说明",
+        "preview": "补 /fde-api/* 前缀改写一节。",
+        "startedAgoSec": 18900,
+        "lastActiveAgoSec": 18400,
+        "state": "completed"
+      },
+      {
+        "agent": "dsh",
+        "agentName": "DSH",
+        "projectId": "D:\\ws\\data-pipeline",
+        "title": "夜间批处理脚本：分片重试与断点续跑",
+        "preview": "分片失败按指数退避重试三次，断点记录写入 manifest.json；dsh 会话目录本轮扫描失败（EBUSY），此处为上次扫描缓存。",
+        "startedAgoSec": 9000,
+        "lastActiveAgoSec": 2400,
+        "state": "waiting"
+      },
+      {
+        "agent": "dsh",
+        "agentName": "DSH",
+        "projectId": "D:\\ws\\etl-scripts",
+        "title": "字段映射表清洗：日期格式归一",
+        "preview": "八种日期写法归一为 ISO，映射表同步更新。",
+        "startedAgoSec": 12600,
+        "lastActiveAgoSec": 11000,
+        "state": "completed"
+      },
+      {
+        "agent": "workbuddy",
+        "agentName": "WorkBuddy",
+        "projectId": "E:\\ws\\crm-sync",
+        "title": "客户档案去重：手机号归一化匹配",
+        "preview": "手机号去分隔符后建唯一索引，重复档案合并保留最新更新时间；只读挂载 workbuddy.db，其余表一律不碰。",
+        "startedAgoSec": 7200,
+        "lastActiveAgoSec": 95,
+        "state": "active"
+      },
+      {
+        "agent": "workbuddy",
+        "agentName": "WorkBuddy",
+        "projectId": "E:\\ws\\crm-sync",
+        "title": "周报汇总：本周会话活动统计",
+        "preview": "汇总本周 42 条会话，按项目分组输出时长分布。",
+        "startedAgoSec": 30000,
+        "lastActiveAgoSec": 28800,
+        "state": "completed"
+      }
+    ],
+    "sources": [
+      {
+        "id": "zcode",
+        "ok": true,
+        "detail": "~/.zcode/cli · 最近扫描 3 条会话"
+      },
+      {
+        "id": "claude",
+        "ok": true,
+        "detail": "~/.claude/projects · 最近扫描 2 个项目"
+      },
+      {
+        "id": "dsh",
+        "ok": false,
+        "detail": "会话目录读取失败：EBUSY data\\dsh-sessions（展示上次扫描缓存）"
+      },
+      {
+        "id": "workbuddy",
+        "ok": true,
+        "detail": "workbuddy.db 只读挂载 · 最近扫描 2 条会话"
+      }
+    ]
+  },
+  "settings": {
+    "port": 7788,
+    "host": "127.0.0.1",
+    "dataDir": "data",
+    "gitea": {
+      "baseUrl": "https://gitea.example.com",
+      "apiPrefix": "/api/v1",
+      "org": "example-org",
+      "pollIntervalSec": 60,
+      "staleWarnSec": 14400,
+      "staleDangerSec": 86400,
+      "hostWhitelist": [
+        "gitea.example.com"
+      ]
+    },
+    "credential": "GIT_CONFIG_EXTRAHEADER",
+    "gateway": {
+      "enabled": true,
+      "timeoutSec": 600,
+      "bin": "cli-gateway",
+      "minVersion": "0.9.0"
+    },
+    "agentActivity": {
+      "enabled": true,
+      "perSourceLimit": 10,
+      "maxItems": 40,
+      "previewChars": 200,
+      "sources": {
+        "zcode": {
+          "enabled": true,
+          "root": ""
+        },
+        "claude": {
+          "enabled": true,
+          "root": ""
+        },
+        "dsh": {
+          "enabled": true,
+          "root": ""
+        },
+        "workbuddy": {
+          "enabled": true,
+          "dbPath": ""
+        }
+      }
+    },
+    "dingtalk": {
+      "enabled": true,
+      "dwsBin": "C:\\mock\\dws.exe",
+      "dwsTimeoutSec": 60,
+      "maxMessages": 200,
+      "hostWhitelist": [
+        "dingtalk.com"
+      ]
+    },
+    "analyze": {
+      "dshBin": "C:\\mock\\dsh-bin.js",
+      "timeoutSec": 120,
+      "maxTasksPerMessage": 10
+    },
+    "security": {
+      "trustedHosts": [
+        "gitea.example.com"
+      ]
+    }
+  },
+  "setupCheck": {
+    "allOk": true,
+    "checkedAt": "2026-10-19T08:00:00Z",
+    "items": [
+      {
+        "id": "node",
+        "name": "Node 运行时",
+        "ok": true,
+        "detail": "v24.15.0（≥18 满足）",
+        "hint": ""
+      },
+      {
+        "id": "dws",
+        "name": "钉钉采集 CLI（dws）",
+        "ok": true,
+        "detail": "C:\\mock\\dws.exe 可执行",
+        "hint": ""
+      },
+      {
+        "id": "dsh",
+        "name": "分析引擎（dsh）",
+        "ok": true,
+        "detail": "C:\\mock\\dsh-bin.js · 超时 120s",
+        "hint": ""
+      },
+      {
+        "id": "llmRoute",
+        "name": "LLM 路由",
+        "ok": true,
+        "detail": "bigmodel 路由可达 · 往返 912ms",
+        "hint": ""
+      },
+      {
+        "id": "gitea",
+        "name": "Gitea 连通",
+        "ok": true,
+        "detail": "https://gitea.example.com · API v1.22.0 · 143ms",
+        "hint": ""
+      },
+      {
+        "id": "cliGateway",
+        "name": "cli-gateway 网关",
+        "ok": true,
+        "detail": "v1.2.3 · 能力位 4/4",
+        "hint": ""
+      }
+    ]
+  },
+  "setupCheckFail": {
+    "overrides": {
+      "dws": {
+        "ok": false,
+        "detail": "未找到 dws 可执行文件（配置路径与 PATH 均未命中）",
+        "hint": "修复：安装钉钉听记 CLI 后，在「设置 → 钉钉采集 → dws 程序路径」填写完整路径并保存，再点重新体检。不修复则任务雷达无法同步钉钉听记。"
+      },
+      "llmRoute": {
+        "ok": false,
+        "detail": "LLM 路由不可达（连接超时 10s）",
+        "hint": "修复：检查本机网络或代理配置，确认 LLM 网关地址可访问后重新体检。路由恢复前，听记分析会持续失败。"
+      }
+    }
+  },
+  "radarMessages": [
+    {
+      "id": "msg-a1b2c3d4e5f60718",
+      "source": "dingtalk",
+      "kind": "minutes",
+      "title": "周三需求对齐会",
+      "occurredAt": "2026-10-18T10:49:33.358Z",
+      "truncated": false,
+      "ref": {
+        "dingtalkId": "6132373438313131616161",
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131616161"
+      },
+      "analyzedAt": null,
+      "analyzeState": "",
+      "analyzeError": null,
+      "noise": [],
+      "speakerSegments": [
+        {
+          "raw": "建国",
+          "memberId": null,
+          "text": "SSO 这块周五前要上线，小王你来跟进部署文档。",
+          "at": "2026-10-18T10:49:33.358Z"
+        },
+        {
+          "raw": "小王",
+          "memberId": null,
+          "text": "我看看。",
+          "at": "2026-10-18T10:50:33.358Z"
+        },
+        {
+          "raw": "建国",
+          "memberId": null,
+          "text": "@李雷 下周一把测试环境搭建方案发我。",
+          "at": "2026-10-18T10:51:33.358Z"
+        }
+      ],
+      "content": "【建国】SSO 这块周五前要上线，小王你来跟进部署文档。\n【小王】我看看。\n【建国】@李雷 下周一把测试环境搭建方案发我。",
+      "mockAnalysis": {
+        "tasks": [
+          {
+            "title": "SSO 周五前上线",
+            "desc": "SSO 功能上线",
+            "priority": "high",
+            "suggestedMemberId": "",
+            "dueHint": "周五",
+            "confidence": 0.92,
+            "quote": "SSO 这块周五前要上线，小王你来跟进部署文档。",
+            "rationale": "明确动作+负责人+时间",
+            "speakerRaw": "建国"
+          },
+          {
+            "title": "测试环境搭建方案",
+            "desc": "",
+            "priority": "medium",
+            "suggestedMemberId": "li.lei",
+            "dueHint": "下周一",
+            "confidence": 0.78,
+            "quote": "@李雷 下周一把测试环境搭建方案发我。",
+            "rationale": "动作明确，时间明确",
+            "speakerRaw": "建国"
+          },
+          {
+            "title": "跟进部署文档",
+            "desc": "",
+            "priority": "unset",
+            "suggestedMemberId": "",
+            "dueHint": "",
+            "confidence": 0.42,
+            "quote": "小王你来跟进部署文档",
+            "rationale": "疑似重复：部署文档已在看板",
+            "speakerRaw": "建国"
+          }
+        ],
+        "noise": [
+          {
+            "quote": "我看看。",
+            "reason": "无明确动作与交付物"
+          }
+        ]
+      }
+    },
+    {
+      "id": "msg-b2c3d4e5f6071819",
+      "source": "dingtalk",
+      "kind": "minutes",
+      "title": "SSO 技术评审",
+      "occurredAt": "2026-10-17T13:49:33.358Z",
+      "truncated": false,
+      "ref": {
+        "dingtalkId": "6132373438313131626262",
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131626262"
+      },
+      "analyzedAt": null,
+      "analyzeState": "",
+      "analyzeError": null,
+      "noise": [],
+      "speakerSegments": [
+        {
+          "raw": "李雷",
+          "memberId": null,
+          "text": "登录超时阈值定成 30 分钟，今天下班前出评审结论。",
+          "at": "2026-10-17T13:49:33.358Z"
+        },
+        {
+          "raw": "王芳",
+          "memberId": null,
+          "text": "行，我来整理结论纪要。",
+          "at": "2026-10-17T13:51:03.358Z"
+        }
+      ],
+      "content": "【李雷】登录超时阈值定成 30 分钟，今天下班前出评审结论。\n【王芳】行，我来整理结论纪要。",
+      "mockAnalysis": {
+        "tasks": [
+          {
+            "title": "整理 SSO 评审结论纪要",
+            "desc": "",
+            "priority": "medium",
+            "suggestedMemberId": "",
+            "dueHint": "今天下班前",
+            "confidence": 0.71,
+            "quote": "行，我来整理结论纪要。",
+            "rationale": "动作明确，人时模糊",
+            "speakerRaw": "王芳"
+          }
+        ],
+        "noise": []
+      }
+    },
+    {
+      "id": "msg-c3d4e5f607181920",
+      "source": "dingtalk",
+      "kind": "minutes",
+      "title": "周五茶话会",
+      "occurredAt": "2026-10-16T13:49:33.358Z",
+      "truncated": false,
+      "ref": {
+        "dingtalkId": "6132373438313131636363",
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131636363"
+      },
+      "analyzedAt": "2026-10-16T15:49:33.358Z",
+      "analyzeState": "ok",
+      "analyzeError": null,
+      "speakerSegments": [
+        {
+          "raw": "小王",
+          "memberId": null,
+          "text": "大家周末过得怎么样？",
+          "at": "2026-10-16T13:49:33.358Z"
+        },
+        {
+          "raw": "建国",
+          "memberId": null,
+          "text": "还不错，出去爬了山。",
+          "at": "2026-10-16T13:50:03.358Z"
+        }
+      ],
+      "content": "【小王】大家周末过得怎么样？\n【建国】还不错，出去爬了山。",
+      "noise": [
+        {
+          "quote": "大家周末过得怎么样？",
+          "reason": "寒暄，无任务"
+        },
+        {
+          "quote": "还不错，出去爬了山。",
+          "reason": "生活分享，无任务"
+        }
+      ]
+    },
+    {
+      "id": "msg-d4e5f60718192021",
+      "source": "dingtalk",
+      "kind": "minutes",
+      "title": "生产日报自动化专项",
+      "occurredAt": "2026-10-15T13:49:33.358Z",
+      "truncated": false,
+      "ref": {
+        "dingtalkId": "6132373438313131646464",
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131646464"
+      },
+      "analyzedAt": "2026-10-15T15:49:33.358Z",
+      "analyzeState": "ok",
+      "analyzeError": null,
+      "speakerSegments": [
+        {
+          "raw": "吴陈铖",
+          "memberId": null,
+          "text": "生产日报这个 skill 每天早上八点前要跑完，我把排单表发群里。",
+          "at": "2026-10-15T13:49:33.358Z"
+        }
+      ],
+      "content": "【吴陈铖】生产日报这个 skill 每天早上八点前要跑完，我把排单表发群里。",
+      "noise": []
+    },
+    {
+      "id": "msg-e5f6071819202122",
+      "source": "dingtalk",
+      "kind": "minutes",
+      "title": "客服核对技能评审",
+      "occurredAt": "2026-10-14T13:49:33.358Z",
+      "truncated": false,
+      "ref": {
+        "dingtalkId": "6132373438313131656565",
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131656565"
+      },
+      "analyzedAt": null,
+      "analyzeState": "ANALYZE_FAILED",
+      "analyzeError": "引擎输出两次解析失败: 输出中未找到 JSON 对象",
+      "noise": [],
+      "speakerSegments": [
+        {
+          "raw": "解光伟",
+          "memberId": null,
+          "text": "合同工单比对技能下周三前铺给客服三人组。",
+          "at": "2026-10-14T13:49:33.358Z"
+        }
+      ],
+      "content": "【解光伟】合同工单比对技能下周三前铺给客服三人组。"
+    },
+    {
+      "id": "msg-f607181920212223",
+      "source": "dingtalk",
+      "kind": "minutes",
+      "title": "库存核准表自动化（超长截断演示）",
+      "occurredAt": "2026-10-13T15:49:33.358Z",
+      "truncated": true,
+      "ref": {
+        "dingtalkId": "6132373438313131666666",
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131666666"
+      },
+      "analyzedAt": "2026-10-13T17:49:33.358Z",
+      "analyzeState": "ok",
+      "analyzeError": null,
+      "speakerSegments": [
+        {
+          "raw": "孙豪",
+          "memberId": null,
+          "text": "库存核准表每月五号前出，三张表的数据都交给你。",
+          "at": "2026-10-13T15:49:33.358Z"
+        }
+      ],
+      "content": "【孙豪】库存核准表每月五号前出，三张表的数据都交给你。\n【已截断：超过单条 600 段上限】",
+      "noise": []
+    }
+  ],
+  "inbox": [
+    {
+      "id": "cand-high001",
+      "messageId": "msg-d4e5f60718192021",
+      "messageTitle": "生产日报自动化专项",
+      "occurredAt": "2026-10-15T13:49:33.358Z",
+      "title": "配置生产日报 skill 定时任务",
+      "desc": "每天早上八点前自动跑完生产日报",
+      "priority": "high",
+      "suggestedMemberId": "qianqi",
+      "matchSource": "alias",
+      "dueHint": "每天早上八点前",
+      "confidence": 0.92,
+      "quote": "生产日报这个 skill 每天早上八点前要跑完，我把排单表发群里。",
+      "rationale": "明确动作+负责人+时间",
+      "speakerRaw": "吴陈铖",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-15T15:49:33.358Z"
+    },
+    {
+      "id": "cand-upd001",
+      "kind": "update",
+      "messageId": "msg-b2c3d4e5f6071819",
+      "messageTitle": "SSO 技术评审",
+      "occurredAt": "2026-10-16T10:30:00.000Z",
+      "existingTaskId": "t-m4ek9a-3f21",
+      "title": "任务更新：SSO 登出后会话需立即失效",
+      "note": "评审会补充验收标准：登出后旧 token 立即失效（原描述未覆盖登出场景）",
+      "desc": "",
+      "confidence": 0.88,
+      "quote": "登出之后会话要立即失效，不能沿用旧 token 直接进系统。",
+      "rationale": "关联已有任务「接入 SSO 登录」，动作与验收点明确",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-16T10:35:00.000Z"
+    },
+    {
+      "id": "cand-upd002",
+      "kind": "update",
+      "messageId": "msg-e5f6071819202122",
+      "messageTitle": "客服核对技能评审",
+      "occurredAt": "2026-10-16T11:10:00.000Z",
+      "existingTaskId": "t-deleted-demo",
+      "title": "任务更新：库存核准表先行灰度一个月",
+      "note": "关联任务已删除：确认时应收到 400 TASK_NOT_FOUND（错误分支演示）",
+      "desc": "",
+      "confidence": 0.66,
+      "quote": "库存核准表那个先别全量，灰度一个月看看准确率再说。",
+      "rationale": "关联任务已不存在，用于演示 400 分支",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-16T11:12:00.000Z"
+    },
+    {
+      "id": "cand-mid0002",
+      "messageId": "msg-e5f6071819202122",
+      "messageTitle": "客服核对技能评审",
+      "occurredAt": "2026-10-14T13:49:33.358Z",
+      "title": "合同工单比对技能铺开",
+      "desc": "",
+      "priority": "medium",
+      "suggestedMemberId": "",
+      "dueHint": "下周三",
+      "confidence": 0.64,
+      "quote": "合同工单比对技能下周三前铺给客服三人组。",
+      "rationale": "推断性表述，负责人未明确",
+      "speakerRaw": "解光伟",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-14T15:49:33.358Z"
+    },
+    {
+      "id": "cand-low0003",
+      "messageId": "msg-f607181920212223",
+      "messageTitle": "库存核准表自动化（超长截断演示）",
+      "occurredAt": "2026-10-13T15:49:33.358Z",
+      "title": "接管库存核准表月度产出",
+      "desc": "",
+      "priority": "low",
+      "suggestedMemberId": "",
+      "dueHint": "每月五号",
+      "confidence": 0.58,
+      "quote": "库存核准表每月五号前出，三张表的数据都交给你。",
+      "rationale": "推断性表述，指向不明",
+      "speakerRaw": "孙豪",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-13T17:49:33.358Z"
+    },
+    {
+      "id": "cand-gitea06",
+      "messageId": "msg-b2c3d4e5f6071819",
+      "messageTitle": "SSO 技术评审",
+      "occurredAt": "2026-10-17T13:49:33.358Z",
+      "title": "整理 SSO 评审遗留问题清单",
+      "desc": "把评审会遗留的三个问题整理成清单并逐项跟进",
+      "priority": "medium",
+      "suggestedMemberId": "qianqi",
+      "matchSource": "gitea",
+      "dueHint": "本周五前",
+      "confidence": 0.78,
+      "quote": "这些问题本周五前要有个说法，先整理个清单出来。",
+      "rationale": "动作与期限明确；说话人「老张」按 Gitea 派生成员建议（名册外）",
+      "speakerRaw": "老张",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-17T14:49:33.358Z"
+    },
+    {
+      "id": "cand-spk08",
+      "messageId": "msg-e5f6071819202122",
+      "messageTitle": "客服核对技能评审",
+      "occurredAt": "2026-10-15T09:30:00.000Z",
+      "title": "输出客服核对技能灰度结论",
+      "desc": "整理灰度期间的误判样本，输出结论纪要与下一步动作",
+      "priority": "medium",
+      "suggestedMemberId": "lisi",
+      "matchSource": "name",
+      "dueHint": "下周",
+      "confidence": 0.81,
+      "quote": "灰度结论纪要我先安排起来，下周给到大家。",
+      "rationale": "明确动作+时间窗；说话人原文「李四（硅谷）」按姓名包含归人",
+      "speakerRaw": "李四（硅谷）",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-15T11:30:00.000Z"
+    },
+    {
+      "id": "cand-spk09",
+      "messageId": "msg-d4e5f60718192021",
+      "messageTitle": "生产日报自动化专项",
+      "occurredAt": "2026-10-15T10:10:00.000Z",
+      "title": "跟进生产日报排期风险",
+      "desc": "盯生产日报上游排期，风险点当天同步群内",
+      "priority": "medium",
+      "suggestedMemberId": "zhangsan",
+      "matchSource": "gitea",
+      "dueHint": "今天",
+      "confidence": 0.76,
+      "quote": "生产日报的排期跟进交给张三，李四（硅谷）你把风险点整理一下。",
+      "rationale": "说话人是李四（硅谷）、做事的是张三：说话人与负责人需分别确认（v1.8 解耦样例）",
+      "speakerRaw": "李四（硅谷）",
+      "state": "pending",
+      "decidedAt": null,
+      "createdAt": "2026-10-15T12:10:00.000Z"
+    },
+    {
+      "id": "cand-rej0004",
+      "messageId": "msg-c3d4e5f607181920",
+      "messageTitle": "周五茶话会",
+      "occurredAt": "2026-10-16T13:49:33.358Z",
+      "title": "（误识示例）组织周末爬山活动",
+      "desc": "",
+      "priority": "low",
+      "suggestedMemberId": "",
+      "dueHint": "",
+      "confidence": 0.55,
+      "quote": "还不错，出去爬了山。",
+      "rationale": "生活分享被误判为活动提议",
+      "speakerRaw": "建国",
+      "state": "rejected",
+      "reason": "invalid",
+      "note": "生活分享被误判为任务",
+      "decidedAt": "2026-10-16T23:49:33.358Z",
+      "createdAt": "2026-10-16T15:49:33.358Z"
+    },
+    {
+      "id": "cand-conf05",
+      "messageId": "msg-b2c3d4e5f6071819",
+      "messageTitle": "SSO 技术评审",
+      "occurredAt": "2026-10-17T13:49:33.358Z",
+      "title": "登录超时阈值调整评审",
+      "desc": "",
+      "priority": "medium",
+      "suggestedMemberId": "",
+      "dueHint": "",
+      "confidence": 0.7,
+      "quote": "登录超时阈值定成 30 分钟，今天下班前出评审结论。",
+      "rationale": "动作明确",
+      "speakerRaw": "李雷",
+      "state": "confirmed",
+      "decidedAt": "2026-10-17T15:49:33.358Z",
+      "createdAt": "2026-10-17T13:49:33.358Z",
+      "confirmedTaskId": "t-demo-origin"
+    },
+    {
+      "id": "cand-done0007",
+      "messageId": "msg-c3d4e5f607181920",
+      "messageTitle": "周五茶话会",
+      "occurredAt": "2026-10-16T13:49:33.358Z",
+      "title": "（已完成示例）订周五下午茶点",
+      "desc": "团建茶点由小王负责采买",
+      "priority": "low",
+      "suggestedMemberId": "",
+      "dueHint": "周五",
+      "confidence": 0.52,
+      "quote": "周五团建茶点我来订。",
+      "rationale": "动作明确，但会上反馈已经完成",
+      "speakerRaw": "小王",
+      "state": "done_already",
+      "note": "会上已经订好了，无需再看板跟进",
+      "decidedAt": "2026-10-17T10:00:00Z",
+      "createdAt": "2026-10-16T16:00:00Z"
+    }
+  ],
+  "agentSessions": {
+    "zcode": [
+      {
+        "id": "zc-act1",
+        "title": "智能体动态面板：活动流渲染、来源健康徽标与 30s 轮询合并",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "startedAgoSec": 5400,
+        "lastActiveAgoSec": 75,
+        "state": "active"
+      },
+      {
+        "id": "zc-long",
+        "title": "指挥台联调长转录样例：阅读器懒渲染回归（855 条）",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "startedAgoSec": 200000,
+        "lastActiveAgoSec": 4200,
+        "state": "completed"
+      },
+      {
+        "id": "zc-topo",
+        "title": "原型比对：确认稿动态面板视觉走查",
+        "projectId": "E:\\ws\\fde-cankao",
+        "startedAgoSec": 100000,
+        "lastActiveAgoSec": 96000,
+        "state": "completed"
+      },
+      {
+        "id": "zc-fix",
+        "title": "修复会话存活 PID 复用误报：复现步骤与回归补齐",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "startedAgoSec": 72000,
+        "lastActiveAgoSec": 900,
+        "state": "active",
+        "taskId": "t-m4ekb2-8c07"
+      },
+      {
+        "id": "zc-cache",
+        "title": "Gitea 动态流轮询缓存：ETag 条件请求与退避策略落地",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "startedAgoSec": 18000,
+        "lastActiveAgoSec": 300,
+        "state": "active",
+        "taskId": "t-m4ekc5-d4e9"
+      },
+      {
+        "id": "t-m4ekb2-8c07",
+        "title": "PID 复用误报排查（会话 id 即任务 id 形态，ref 解码对齐）",
+        "projectId": "E:\\agent开发\\FdeHarness",
+        "startedAgoSec": 200000,
+        "lastActiveAgoSec": 66000,
+        "state": "completed"
+      }
+    ],
+    "claude": [
+      {
+        "id": "cl-sso",
+        "title": "SSO 登录第一轮：改造清单与验收标准梳理",
+        "projectId": "E:\\ws\\fde",
+        "startedAgoSec": 90000,
+        "lastActiveAgoSec": 84000,
+        "state": "completed",
+        "taskId": "t-m4ek9a-3f21"
+      },
+      {
+        "id": "cl-mem",
+        "title": "成员进度页聚合视图：currentTask 附带截止与优先级",
+        "projectId": "E:\\ws\\member-console",
+        "startedAgoSec": 3600,
+        "lastActiveAgoSec": 240,
+        "state": "active"
+      },
+      {
+        "id": "cl-docs",
+        "title": "部署文档更新：插件态路由前缀说明",
+        "projectId": "E:\\ws\\docs-site",
+        "startedAgoSec": 18900,
+        "lastActiveAgoSec": 18400,
+        "state": "completed"
+      }
+    ],
+    "dsh": [
+      {
+        "id": "dsh-1",
+        "title": "夜间批处理脚本：分片重试与断点续跑",
+        "projectId": "D:\\ws\\data-pipeline",
+        "startedAgoSec": 9000,
+        "lastActiveAgoSec": 2400,
+        "state": "waiting"
+      },
+      {
+        "id": "dsh-2",
+        "title": "字段映射表清洗：日期格式归一",
+        "projectId": "D:\\ws\\etl-scripts",
+        "startedAgoSec": 12600,
+        "lastActiveAgoSec": 11000,
+        "state": "completed"
+      }
+    ],
+    "workbuddy": [
+      {
+        "id": "wb-1",
+        "title": "客户档案去重：手机号归一化匹配",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAgoSec": 7200,
+        "lastActiveAgoSec": 95,
+        "state": "active"
+      },
+      {
+        "id": "wb-2",
+        "title": "周报汇总：本周会话活动统计",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAgoSec": 30000,
+        "lastActiveAgoSec": 28800,
+        "state": "completed"
+      },
+      {
+        "id": "wb-f01",
+        "title": "周报汇总：订单模块本周活动统计",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-16T10:01:34.000Z",
+        "lastActiveAt": "2026-10-16T11:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f02",
+        "title": "数据同步：夜间增量任务巡检",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-16T00:01:34.000Z",
+        "lastActiveAt": "2026-10-16T01:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f03",
+        "title": "客户标签批量打标：规则引擎核对",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-15T14:01:34.000Z",
+        "lastActiveAt": "2026-10-15T15:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f04",
+        "title": "线索池清洗：空号与停机号过滤",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-15T04:01:34.000Z",
+        "lastActiveAt": "2026-10-15T05:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f05",
+        "title": "合同到期提醒：90 天窗口扫描",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-14T18:01:34.000Z",
+        "lastActiveAt": "2026-10-14T19:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f06",
+        "title": "回款台账核对：金额分摊口径",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-14T08:01:34.000Z",
+        "lastActiveAt": "2026-10-14T09:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f07",
+        "title": "工单SLA统计：超时工单归因",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-13T22:01:34.000Z",
+        "lastActiveAt": "2026-10-13T23:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f08",
+        "title": "客户分层报表：RFM 模型参数",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-13T12:01:34.000Z",
+        "lastActiveAt": "2026-10-13T13:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f09",
+        "title": "产品试用到期名单导出",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-13T02:01:34.000Z",
+        "lastActiveAt": "2026-10-13T03:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f10",
+        "title": "拜访记录补录：新增字段回填",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-12T16:01:34.000Z",
+        "lastActiveAt": "2026-10-12T17:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f11",
+        "title": "竞品情报汇总：本周更新 3 条",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-12T06:01:34.000Z",
+        "lastActiveAt": "2026-10-12T07:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f12",
+        "title": "知识库检索日志分析：TOP 问题聚类",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-11T20:01:34.000Z",
+        "lastActiveAt": "2026-10-11T21:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f13",
+        "title": "权限审计：管理员操作清单核对",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-11T10:01:34.000Z",
+        "lastActiveAt": "2026-10-11T11:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f14",
+        "title": "消息模板梳理：退订文案合规检查",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-11T00:01:34.000Z",
+        "lastActiveAt": "2026-10-11T01:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f15",
+        "title": "API 配额核对：超额客户预警",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-10T14:01:34.000Z",
+        "lastActiveAt": "2026-10-10T15:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f16",
+        "title": "客户成功案例收集：Q4 素材",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-10T04:01:34.000Z",
+        "lastActiveAt": "2026-10-10T05:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f17",
+        "title": "销售漏斗校准：阶段停留时长",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-09T18:01:34.000Z",
+        "lastActiveAt": "2026-10-09T19:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f18",
+        "title": "客服排班表：节假日覆盖检查",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-09T08:01:34.000Z",
+        "lastActiveAt": "2026-10-09T09:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f19",
+        "title": "数据看板巡检：指标口径漂移排查",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-08T22:01:34.000Z",
+        "lastActiveAt": "2026-10-08T23:08:14.000Z",
+        "state": "completed"
+      },
+      {
+        "id": "wb-f20",
+        "title": "月度对账：账单与回款差异清单",
+        "projectId": "E:\\ws\\crm-sync",
+        "startedAt": "2026-10-08T12:01:34.000Z",
+        "lastActiveAt": "2026-10-08T13:08:14.000Z",
+        "state": "completed"
+      }
+    ],
+    "codex": [
+      {
+        "id": "cx-week",
+        "title": "FDE 周报模板：字段结构与自动汇总脚本",
+        "projectId": "E:\\ws\\reports",
+        "startedAgoSec": 25200,
+        "lastActiveAgoSec": 420,
+        "state": "active",
+        "taskId": "t-m4ekf4-5c3d"
+      },
+      {
+        "id": "cx-route",
+        "title": "插件路由前缀迁移核对：/fde-api/* 全量走查",
+        "projectId": "E:\\ws\\docs-site",
+        "startedAgoSec": 172800,
+        "lastActiveAgoSec": 90000,
+        "state": "completed"
+      }
+    ]
+  },
+  "agentTranscripts": {
+    "cl-sso": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "接手 SSO 登录改造。先读 docs/auth.md 和现有登录路由，梳理改造清单，先别动代码。\n验收口径：测试账号免密登录成功，登出后会话立即失效。"
+        },
+        {
+          "role": "assistant",
+          "text": "好的。我先读认证文档与现有路由，再给出改造清单供确认。\n计划：\n1. docs/auth.md 全文阅读\n2. 扫描 src/routes 登录相关端点\n3. 输出清单 + 风险点"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "read_file",
+            "status": "ok"
+          },
+          "text": "docs/auth.md · 142 行\n识别登录链路 3 处：/login（表单）、/callback（IdP 回跳）、/logout（会话失效）\nSAML 元数据要求 persistent NameID（文档 §4.2）"
+        },
+        {
+          "role": "assistant",
+          "text": "读完了。改造清单 3 项：\n1. sso.ts：IdP 元数据加载改 persistent NameID\n2. callback.ts：回跳校验补 RelayState\n3. logout：会话服务端吊销，不只清前端 cookie\n其中第 3 项是验收硬要求，动服务端会话存储。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "grep",
+            "status": "ok"
+          },
+          "text": "src/routes 命中 \"session\" 12 处（8 个文件）\nsrc/auth/sso.ts:41  src/routes/callback.ts:17  src/routes/logout.ts:9 …"
+        },
+        {
+          "role": "user",
+          "text": "补充：登出除了吊销会话，还要把 remember-me 的持久令牌一并作废。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "error"
+          },
+          "text": "src/auth/sso.ts 写入失败：EBUSY resource busy（文件被 IDE 占用），已排队重试"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "ok"
+          },
+          "text": "src/auth/sso.ts +38 -6\nsrc/routes/callback.ts +21 -3\nsrc/routes/logout.ts +15 -2（吊销会话 + 作废持久令牌）"
+        },
+        {
+          "role": "assistant",
+          "text": "改造完成，摘要：\n- persistent NameID + RelayState 校验\n- 登出吊销服务端会话并作废 remember-me 令牌\n- 单测 20 项全过（auth 12 + session 8）\n下一步：跑一轮手工验收，然后提交 feat/sso 分支。"
+        }
+      ]
+    },
+    "zc-act1": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "智能体动态面板开工：活动流列表 + 来源健康徽标 + 30s 轮询，并入既有 10s tick 节流，别起双定时器。"
+        },
+        {
+          "role": "assistant",
+          "text": "先定位现状：agents.js 当前的轮询入口与面板插入点，确认 esc() 覆盖 projectId 反斜杠转义。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "read_file",
+            "status": "ok"
+          },
+          "text": "web/js/views/agents.js · 754 行\n轮询入口：startPolling(refreshSessions, 10000)（:131）\n面板插入点：#act-panel 容器已预留（:63）"
+        },
+        {
+          "role": "assistant",
+          "text": "方案：refreshActivity 挂进既有 tick，actLastFetch 做 30s 节流；来源徽标 4 枚（zcode 蓝/claude 橙/dsh 绿/workbuddy 粉），失败源 title 带 detail。preview 两行截断走 -webkit-line-clamp。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "ok"
+          },
+          "text": "web/js/views/agents.js +96 -12\nweb/css/app.css +38 -1（act-item/act-sources/act-preview）"
+        },
+        {
+          "role": "assistant",
+          "text": "完成。自测：?mock=1 下七视图 console 零错误；30s 节流验证（tick 3 跳实拉 1 次）；反斜杠路径转义无破版。可以提验收。"
+        }
+      ]
+    },
+    "zc-topo": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "对照确认稿走查动态面板视觉：字重/间距/徽标透明度，只记录偏差不改码。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "read_file",
+            "status": "ok"
+          },
+          "text": "cankao/确认稿-动态面板.png + web/css/app.css 对照完成"
+        },
+        {
+          "role": "assistant",
+          "text": "走查结论 3 条偏差：\n1. 徽标底透明度确认稿 .13，现码 .16（统一回 .13）\n2. 组头字重确认稿 500，现码 600\n3. 预览行高确认稿 1.5，现码 1.45\n均为主样式层小改，已备注在走查单。"
+        }
+      ]
+    },
+    "cl-mem": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "成员进度页的进行中任务要能直接看到截止与优先级，别再点进看板。聚合接口带上。"
+        },
+        {
+          "role": "assistant",
+          "text": "在 /api/members 聚合里给 currentTask 补 dueDate/priority（契约 v1.4 口径），徽标复用 dueBadge 同一语言，前端零新样式。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "read_file",
+            "status": "ok"
+          },
+          "text": "lib/members.js · 186 行 · currentTask 组装在 aggregateRows()（:88）"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "ok"
+          },
+          "text": "lib/members.js +14 -3\n别名匹配改大小写不敏感（同批次回归）"
+        },
+        {
+          "role": "assistant",
+          "text": "完成。members 测试 17 项全绿；徽标在成员行与进度条同行右侧，逾期红/到期橙与看板一致。"
+        }
+      ]
+    },
+    "cl-docs": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "部署文档补一节：DSH 插件态下 API 走 /fde-api/* 前缀改写，给运维看。"
+        },
+        {
+          "role": "assistant",
+          "text": "补充到 docs/deploy.md「插件态路由」一节：API_BASE 改写规则 + 独立版回退说明，配一条 curl 验证示例。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "ok"
+          },
+          "text": "docs/deploy.md +26（插件态路由前缀 / 回退 / curl 冒烟三小节）"
+        },
+        {
+          "role": "assistant",
+          "text": "文档已更新。示例 curl 用 /fde-api/health 验证宿主回环监听，无需暴露端口。"
+        }
+      ]
+    },
+    "dsh-1": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "夜间批处理三个分片总在第二个挂，加重试与断点续跑。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "plan",
+            "status": "ok"
+          },
+          "text": "分片失败按指数退避重试三次；断点位写入 manifest.json；manifest 存在则跳过已完成分片"
+        },
+        {
+          "role": "assistant",
+          "text": "按计划改造 runner：retry(backoff=2^n, max=3) + checkpoint。注意 manifest 写入要原子（tmp+rename），防止中断留脏文件。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "exec",
+            "status": "ok"
+          },
+          "text": "node runner.js --dry-run\n分片 1/3 ok（41s）· 分片 2/3 重试 1 次后 ok · 分片 3/3 ok\nmanifest.json 断点校验通过"
+        },
+        {
+          "role": "assistant",
+          "text": "等待夜间窗口实测，白天先保持 waiting 观察态。"
+        }
+      ]
+    },
+    "dsh-2": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "字段映射表里日期写法有八种，全部归一成 ISO。"
+        },
+        {
+          "role": "assistant",
+          "text": "归一规则：YYYY/M/D、DDMMYYYY、中文年月日等 → ISO 8601；歧义写法（01/02/03）按表内出现频率多数决，并列时回退月日年。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "exec",
+            "status": "ok"
+          },
+          "text": "清洗 1,842 行 · 归一 1,793 · 歧义裁决 49 · 映射表同步更新 v7"
+        }
+      ]
+    },
+    "cx-week": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "按上周看板导出整理 FDE 周报模板：字段要含任务/成果/验收人，先出结构再写汇总脚本。"
+        },
+        {
+          "role": "assistant",
+          "text": "结构定三段：① 本周完成（含完成时间）② 进行中（含负责人与截止）③ 风险与阻塞。先读导出的 CSV 列名再对齐字段。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "read_file",
+            "status": "ok"
+          },
+          "text": "data/board-export.csv · 表头 12 列：id,title,status,owner,acceptor,due,…"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "run_tests",
+            "status": "error"
+          },
+          "text": "汇总脚本首轮跑批 1 项失败：acceptor 列存在空值未判空\n→ 已在脚本补空值兜底后重跑"
+        },
+        {
+          "role": "assistant",
+          "text": "已修复空值兜底，周报模板初稿见 reports/fde-weekly.md，汇总脚本输出与看板导出对账一致。"
+        }
+      ]
+    },
+    "zc-fix": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "会话表存活判断按 PID 复用误报：复现一下，并给出修复后的回归用例。"
+        },
+        {
+          "role": "assistant",
+          "text": "复现路径：起一个短命进程占住退役会话的 PID，存活探测读到新进程 → 误报运行中。修复方向是探测加启动时间戳比对。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "ok"
+          },
+          "text": "lib/sessions.js +6 -2：alive 判断追加 process start time 比对"
+        },
+        {
+          "role": "assistant",
+          "text": "回归用例已补 3 条（PID 复用/正常退出/探测超时），全量跑绿。该模块随后续会话表退役一并下线，修复保持最小面。"
+        }
+      ]
+    },
+    "zc-cache": {
+      "messages": [
+        {
+          "role": "user",
+          "text": "Gitea 动态流轮询缓存：用 ETag 条件请求把空轮询的流量降下来，退避策略一并做。"
+        },
+        {
+          "role": "assistant",
+          "text": "方案：首拉记录 ETag，后续轮询带 If-None-Match——304 时仅续用本地缓存并进入指数退避（30s→60s→120s 封顶），任一事件变更即复位退避计数。"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "edit_file",
+            "status": "ok"
+          },
+          "text": "lib/gitea.js +18 -4：ETag 存储 + If-None-Match 条件请求 + 退避计数器"
+        },
+        {
+          "role": "tool",
+          "tool": {
+            "name": "run_tests",
+            "status": "ok"
+          },
+          "text": "node --test gitea.test.js 12 项全绿（304 短路/变更复位/退避封顶三路径覆盖）"
+        }
+      ]
+    }
+  }
+}

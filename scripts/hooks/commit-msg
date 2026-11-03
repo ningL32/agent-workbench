@@ -1,0 +1,27 @@
+#!/bin/sh
+# commit-msg hook — FDE 指挥台归因协议配套工具
+# 作用：commit message 未带 [#任务id] 且当前分支是约定分支 task/<id> 时，
+#       自动在首行末尾补上 [#<任务id>]，人工免记。
+# 安装：复制到你的仓库 .git/hooks/commit-msg 并 chmod +x（Windows Git Bash 同样可用）。
+# 协议：docs/ATTRIBUTION.md
+
+MSG_FILE="$1"
+[ -f "$MSG_FILE" ] || exit 0
+
+# 首行已带 [#...] 标记 → 不动
+head -n 1 "$MSG_FILE" | grep -q '\[#' && exit 0
+
+# 当前分支名 → task/<id> 形态则提取 id
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null)"
+case "$BRANCH" in
+  task/*)
+    TASK_ID="${BRANCH#task/}"
+    [ -n "$TASK_ID" ] || exit 0
+    # 首行末尾追加标记（保留原换行结构）
+    awk -v tag="[#$TASK_ID]" 'NR==1 { print $0 " " tag; next } { print }' "$MSG_FILE" > "$MSG_FILE.tmp" \
+      && mv "$MSG_FILE.tmp" "$MSG_FILE"
+    ;;
+  *)
+    ;;
+esac
+exit 0

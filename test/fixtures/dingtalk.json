@@ -1,0 +1,55 @@
+{
+  "list": {
+    "minutes": [
+      {
+        "taskUuid": "6132373438313131616161",
+        "title": "周三需求对齐会",
+        "startTime": 1792057332000,
+        "endTime": 1792063027000,
+        "status": 4,
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131616161"
+      },
+      {
+        "taskUuid": "6132373438313131626262",
+        "title": "SSO 技术评审",
+        "startTime": 1791970000000,
+        "endTime": 1791975000000,
+        "status": 4,
+        "url": "https://shanji.dingtalk.com/app/transcribes/6132373438313131626262"
+      },
+      {
+        "taskUuid": "6132373438313131636363",
+        "title": "周五茶话会",
+        "startTime": 1791880000000,
+        "endTime": 1791883000000,
+        "status": 4,
+        "url": "https://not-allowed.example.com/x"
+      }
+    ]
+  },
+  "transcripts": {
+    "6132373438313131616161": {
+      "complete": true,
+      "paragraphList": [
+        { "paragraph": "SSO 这块周五前要上线，小王你来跟进部署文档。", "nickName": "建国", "gmtCreate": 1792058000000 },
+        { "paragraph": "我看看。", "nickName": "小王", "gmtCreate": 1792058060000 },
+        { "paragraph": "@李雷 下周一把测试环境搭建方案发我。", "nickName": "建国", "gmtCreate": 1792058120000 },
+        { "paragraph": "好的没问题。", "nickName": "李雷", "gmtCreate": 1792058180000 }
+      ]
+    },
+    "6132373438313131626262": {
+      "complete": true,
+      "paragraphList": [
+        { "paragraph": "登录超时阈值定成 30 分钟，今天下班前出评审结论。", "nickName": "李雷", "gmtCreate": 1791970100000 },
+        { "paragraph": "行，我来整理结论纪要。", "nickName": "王芳", "gmtCreate": 1791970200000 }
+      ]
+    },
+    "6132373438313131636363": {
+      "complete": true,
+      "paragraphList": [
+        { "paragraph": "大家周末过得怎么样？", "nickName": "小王", "gmtCreate": 1791880100000 },
+        { "paragraph": "还不错，出去爬了山。", "nickName": "建国", "gmtCreate": 1791880200000 }
+      ]
+    }
+  }
+}

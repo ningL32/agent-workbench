@@ -1,0 +1,7 @@
+# fde-console bundle patch: one insert over the composed profile tree
+# (same shape as dsh-base/cordis.patch.yml `- insert:` rows; id 必须在 profile 合成树内唯一——
+#  WP1 spike 包(fde-console-spike)占用了 id "fde-console"，两者不可同时挂在同一 profile，
+#  否则 cordis 合成期 insert id 冲突、webServer 也会因 /fde-api 前缀重复注册而炸)
+- insert:
+    - id: fde-console
+      name: fde-console

@@ -1,0 +1,9 @@
+好的，以下是拆解结果：
+{"tasks":[
+  {"title":"测试环境搭建方案","desc":"下周一把测试环境搭建方案发出来","priority":"medium","suggestedMemberId":"li.lei","dueHint":"下周一","confidence":0.85,"quote":"@李雷 下周一把测试环境搭建方案发我。","rationale":"明确动作+负责人+时间"}
+],
+"taskUpdates":[
+  {"existingTaskId":"t-seed-sso-0001","quote":"SSO 这块周五前要上线，小王你来跟进部署文档。","note":"进展：SSO 定于周五上线，部署文档由小王跟进","confidence":0.8},
+  {"existingTaskId":"t-seed-sso-0001","quote":"我看看。","note":"过程性发言，无实质进展","confidence":0.3}
+],
+"noise":[{"quote":"好的没问题。","reason":"无明确动作与交付物"}]}
