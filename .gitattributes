@@ -1,0 +1,14 @@
+# Normalise line endings: store LF, check out LF everywhere.
+# This repo is Windows-first (the workbench observes local agents) but the
+# frontend and docs must stay diff-clean for contributors on Linux/macOS.
+* text=auto eol=lf
+
+# Explicitly text (rendered by GitHub, must not be flagged binary)
+*.md   text eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.svg  text eol=lf
+*.yml  text eol=lf
