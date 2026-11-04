@@ -22,15 +22,20 @@ SPEC-UX-v2.1.md（体验规范）、SPEC-READER-v2.3.md（会话阅读器）、P
 # 1. 安装/更新插件到 profile（首次调用自动 init profile + pnpm link + 回写 dsh.profile.bundles）
 dsh plugin --profile fde-dev add <本仓库绝对路径>
 
-# 2. 启动（注意：没有 `dsh --profile fde-dev web` 这种用法——web 是 bin 层硬编码的别名
-#    profile，不能与 --profile 组合；自定义 profile 起 web 面的正确形态是直接带 --port，
-#    由 web-startup 解析，且 profile 的 dsh.profile.bundles 需含 @deepseek-ai/dsh-web-app）
+# 2. 补 web 界面包：新 profile 只自带 @deepseek-ai/dsh-base，缺它插件会卡在
+#    "fde-console: pending (waiting for service: webServer)"，端口不监听、浏览器打不开。
+#    版本必须与 dsh 一致（下面换成 `dsh --version` 的值），否则会被宿主判 incompatible 拒绝。
+dsh plugin --profile fde-dev add @deepseek-ai/dsh-web-app@0.2.1-rc.2
+
+# 3. 启动（注意：没有 `dsh --profile fde-dev web` 这种用法——web 是 bin 层硬编码的别名
+#    profile，不能与 --profile 组合；自定义 profile 起 web 面的正确形态是直接带 --port）
 dsh --profile fde-dev [--port N]
 ```
 
 - 界面：`http://127.0.0.1:<port>/fde/index.html`（SPA 经 iframe overlay 嵌入 DSH shell）；API 前缀 `/fde-api/*`
 - 0.2.1 起有认证门：**用启动日志打印的带 token URL 打开**（裸地址白屏是正常防御）
 - 冒烟三连：`GET /fde-api/ping` → `{"pong":true,...}`；`GET /fde/index.html` → 200；伪造 Host 打 `/fde-api/*` → 403（Host 防线自持，不依赖宿主 fence）
+- 逐档验证手册：[docs/VERIFY.md](docs/VERIFY.md)（测试门禁 → 插件装载 → 接口写读闭环 → 界面，四档判据）
 - 数据落点：`<DSH_HOME|~/.dsh>/fde-console/`；config.json 无 port/host 键（监听参数由宿主 `--port` 承担）
 - 旧版数据迁移：`node scripts/migrate-data.js [--source <旧目录>] [--base <目标base>] [--dry-run]`
   （拷 data/ 子树与 agents/members 名册；config 三方合并，剥 port/host、dataDir/webDir 重写为 base 下绝对路径、剥遗留 gateway 节；幂等可重跑）

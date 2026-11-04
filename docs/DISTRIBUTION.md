@@ -184,7 +184,9 @@ node scripts/migrate-data.js             # 实际迁移
 
 **其他常见问题**
 
-- **左下角没有「FDE 指挥台」按钮**：profile 里缺 web 界面包。用记事本打开 `C:\Users\<你>\.dsh\profiles\fde-dev\package.json`，在 `"bundles"` 列表里补一行 `"@deepseek-ai/dsh-web-app"`，保存后重启 DSH。
+- **左下角没有「FDE 指挥台」按钮 / 启动日志报 `fde-console: pending (waiting for service: webServer)`**：profile 缺 web 界面包（新 profile 只自带 `@deepseek-ai/dsh-base`）。一条命令补上，版本与 dsh 对齐，别漏版本号：
+  `dsh plugin --profile fde-dev add @deepseek-ai/dsh-web-app@<dsh --version 的值>`，然后重启 DSH。
+  （也可以手工在 `~\.dsh\profiles\<profile>\package.json` 的 `bundles` 里加 `"@deepseek-ai/dsh-web-app"`，但包版本仍要对得上，不如命令稳。）
 - **DSH 窗口关了就打不开指挥台**：正常行为。重新执行第 2 步启动命令即可，数据不会丢。
 - **端口被占用（启动报错）**：`--port` 换一个数字（如 38081）。
 - **想换 profile 名 / 换端口**：都可以，`--profile` 和 `--port` 后面跟新值即可；同一台机器不同 profile 各自独立。

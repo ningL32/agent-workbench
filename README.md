@@ -36,16 +36,24 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 ## Quick start
 
 ```bash
-# 1. install / update the plugin into a profile
+# 1. install / update the plugin into a profile (the profile is created on first use)
 dsh plugin --profile fde-dev add <this repo path>
 
-# 2. start (no `dsh --profile fde-dev web` — web is a reserved alias profile)
+# 2. a fresh profile ships @deepseek-ai/dsh-base only — the web surface bundle is separate.
+#    Without it the plugin loads but never activates:
+#      "fde-console: pending (waiting for service: webServer)"  (port never listens)
+#    Pin it to your dsh version; an unpinned add resolves an incompatible old build.
+dsh plugin --profile fde-dev add @deepseek-ai/dsh-web-app@0.2.1-rc.2   # ← use `dsh --version`
+
+# 3. start (no `dsh --profile fde-dev web` — web is a reserved alias profile)
 dsh --profile fde-dev --port 38082
 ```
 
 Open the printed URL (auth token included) → **Super Workbench** appears in the sidebar. Your local agents are detected automatically — zero config to see your first session.
 
-Data lives in `<DSH_HOME|~/.dsh>/fde-console/` (`data/` + config). App data is stored in SQLite (WAL); JSON is kept for export/interoperability.
+Data lives in `<DSH_HOME|~/.dsh>/fde-console/` (`data/` + config). A fresh data directory stores JSON; run `node scripts/migrate-storage.js` (with every instance stopped) to move the owned units to SQLite + WAL. JSON remains the export/interop format.
+
+Step-by-step verification (test gate → plugin load → API round-trip → UI): [docs/VERIFY.md](docs/VERIFY.md).
 
 ## Demo dataset
 
