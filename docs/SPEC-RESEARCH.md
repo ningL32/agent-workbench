@@ -1,6 +1,6 @@
 # Super Workbench 调研模块规格（docs/SPEC-RESEARCH.md）
 
-> 版本 1.0.0 · 2026-11-22 · 依据：业主拍板「场景调研能力原生重写进工作台」（参考实现 E:\agent开发\ai-scene 已竣工审核通过，对等移植）· 设计经薛定谔审计（7 项决议见 §8，均为约束性契约）
+> 版本 1.1.0 · 2026-11-23 · v1.1:accept 改两阶段(accept 翻转+人工修订 payload → 前端以既有 POST /api/tasks 单写路径建任务 → /link 绑回+research 事件;不复制第二条任务写路径) · 依据：业主拍板「场景调研能力原生重写进工作台」（参考实现 E:\agent开发\ai-scene 已竣工审核通过，对等移植）· 设计经薛定谔审计（7 项决议见 §8，均为约束性契约）
 > 硬约束沿 AGENTS.md：零 npm 依赖、零构建、凭据零落盘、AI 永不直写、失败必须留痕
 > 定位一句话：调研 = 任务漏斗第三入口 + 唯一"工作面"视图；与交付侧构成三条闭环（§2）
 
@@ -49,7 +49,8 @@ GET    /api/research/interviews                 列表(按场景分组,含 pendi
 GET    /api/research/interviews/:id             详情(messages + 缺口清单 + drafts)
 POST   /api/research/interviews/:id/messages    {text} → AI 回复(通道路由)+草稿产出
 POST   /api/research/interviews/:id/close       关闭访谈(停入站,未决草稿保持 pending 可独立处置)
-POST   /api/research/drafts/:id/accept          {payload?人工修订} → 原子 validate+save_task+evidence(kind=document,quote)+task_events(research)
+POST   /api/research/drafts/:id/accept          {payload?人工修订} → 校验+翻转 pending→accepted(409 pending 守卫);返回 payload 供前端经既有 POST /api/tasks 建任务
+POST   /api/research/drafts/:id/link            {taskId} → 绑回草稿+task_events(research,quote 留痕)
 POST   /api/research/drafts/:id/reject          {reason} 留痕
 GET    /api/research/kb/search?q=               FTS5(trigram+LIKE 回退)
 POST   /api/research/kb/documents               {sourceTaskId,kind,title,body}
@@ -57,7 +58,7 @@ GET    /api/research/kb/eligible                可沉淀计数(行动条 chip �
 GET    /api/research/prompts                    提示词资产清单(版本+sha256)
 ```
 
-accept 失败语义：400 FIELD_INVALID 带原因（草稿留 pending）；409 ALREADY_DECIDED（pending 守卫）；双击/并发安全 = 单事务 + 状态守卫。缺口清单与 kb 检索结果在 context_meta 标注来源（历史沉淀 vs 本场景缺口），提示词明确禁止混淆。
+accept 失败语义：400 FIELD_INVALID 带原因（草稿留 pending）；409 ALREADY_DECIDED（pending 守卫）。任务创建复用既有单写路径（POST /api/tasks),不复制第二条写路径;research 来源以 link 步 task_events(type=research,quote) 留痕。缺口清单与 kb 检索结果在 context_meta 标注来源（历史沉淀 vs 本场景缺口），提示词明确禁止混淆。
 
 ## 7. 前端 IA
 

@@ -218,6 +218,16 @@ const UNDOCUMENTED_OK = new Set([
   'GET /api/agent-heatmap',
   'GET /api/tasks/:p/postmortem',
   'GET /api/scorecard/:p',
+  // —— 调研模块（v2.9.72+，功能契约见 docs/SPEC-RESEARCH.md §6）——
+  'POST /api/research/interviews',
+  'GET /api/research/interviews',
+  'GET /api/research/interviews/:p',
+  'POST /api/research/interviews/:p/messages',
+  'POST /api/research/interviews/:p/close',
+  'POST /api/research/drafts/:p/accept',
+  'POST /api/research/drafts/:p/reject',
+  'POST /api/research/drafts/:p/link',
+  'GET /api/research/kb/eligible',
   // —— 知识库学习（v2.9.44+，功能契约见 docs/SPEC-LEARN.md）——
   'GET /api/learn/status',
   'POST /api/learn/probe',

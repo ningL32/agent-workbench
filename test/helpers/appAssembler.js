@@ -900,6 +900,8 @@ function buildApp(options) {
     });
   });
   registerTaskRoutes(router, ctx);
+  // v2.9.72 调研模块路由：SPEC-RESEARCH §6（域逻辑 lib/research/*,注册面在本被扫描层级）
+  require('../../lib/researchRoutes').registerResearchRoutes(router, ctx);
   // v2.9.24 会话归因建议：GET /api/tasks/:id/session-suggestions（排序候选，人工确认挂接）
   sessionSuggestMod.registerSessionSuggestRoute(router, ctx);
   // v2.7 任务日报：GET/PUT /api/tasks/:id/diary、DELETE :date、GET prefill（内部先注册 prefill 再注册 :date）
