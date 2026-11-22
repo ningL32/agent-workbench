@@ -57,14 +57,22 @@ npm i -g pnpm              # 插件安装的转发工具
 
 **验证点**：`dsh --version` 和 `pnpm --version` 都能打印版本号。报「无法识别」就重开一个终端窗口再试；仍不行回到上一条命令补装。
 
-### 第 1 步：克隆仓库并把插件装进 profile
+### 第 1 步：把插件装进 profile
+
+**方式 A（推荐）：npm 一行安装**——以后 `dsh plugin --profile fde-dev add fde-console` 重跑即升级：
+
+```powershell
+dsh plugin --profile fde-dev add fde-console
+```
+
+**方式 B：从 GitHub 克隆本地安装**——适合想用未发版代码的场景：
 
 ```powershell
 git clone https://github.com/ningL32/agent-workbench.git
 dsh plugin --profile fde-dev add .\agent-workbench
 ```
 
-（路径换成你实际克隆到的目录，含空格必须带引号；`fde-dev` 是 profile 名字，可自定义，下文保持一致即可。首次执行会自动创建 profile。以后升级 = `git pull` 后重跑同一条 add 命令。）
+（路径换成你实际克隆到的目录，含空格必须带引号；`fde-dev` 是 profile 名字，可自定义，下文保持一致即可。首次执行会自动创建 profile。）
 
 **验证点**：命令跑完没有红色报错。
 

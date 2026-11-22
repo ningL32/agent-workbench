@@ -57,7 +57,9 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 
 ```bash
 # 1. install / update the plugin into a profile (the profile is created on first use)
-dsh plugin --profile fde-dev add <this repo path>
+dsh plugin --profile fde-dev add fde-console        # from npm — one line
+#    …or from a local clone of this repo:
+#    dsh plugin --profile fde-dev add <this repo path>
 
 # 2. a fresh profile ships @deepseek-ai/dsh-base only — the web surface bundle is separate.
 #    Without it the plugin loads but never activates:

@@ -59,7 +59,9 @@
 
 ```bash
 # 1. 把插件装进 profile（首次执行自动创建 profile）
-dsh plugin --profile fde-dev add <本仓库路径>
+dsh plugin --profile fde-dev add fde-console        # npm 一行安装（推荐）
+#    …或从本地克隆安装：
+#    dsh plugin --profile fde-dev add <本仓库路径>
 
 # 2. 新 profile 只自带 @deepseek-ai/dsh-base —— web 界面包是独立的。
 #    不装它插件会卡在 "fde-console: pending (waiting for service: webServer)"，端口永不监听。
