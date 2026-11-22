@@ -5,6 +5,7 @@ import { state } from './state.js';
 import * as overviewView from './views/overview.js';
 import * as boardView from './views/board.js';
 import * as radarView from './views/radar.js';
+import * as researchView from './views/research.js';
 import * as agentsView from './views/agents.js';
 import * as membersView from './views/members.js';
 import * as activityView from './views/activity.js';
@@ -20,6 +21,7 @@ const VIEWS = {
   overview: overviewView,
   board: boardView,
   radar: radarView,
+  research: researchView,
   agents: agentsView,
   members: membersView,
   activity: activityView,
@@ -30,6 +32,7 @@ const ROUTES = {
   overview: '#/overview',
   board: '#/board',
   radar: '#/radar',
+  research: '#/research',
   agents: '#/agents',
   members: '#/members',
   activity: '#/activity',
@@ -40,6 +43,7 @@ const TITLES = {
   overview: '总览',
   board: '任务看板',
   radar: '任务雷达',
+  research: '调研',
   agents: '智能体',
   members: '成员进度',
   activity: '团队动态',
@@ -48,6 +52,7 @@ const TITLES = {
 };
 const NAV_ICONS = {
   overview: 'layout-dashboard',
+  research: 'book-open',
   board: 'kanban',
   radar: 'radar',
   agents: 'bot',

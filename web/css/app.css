@@ -1508,3 +1508,22 @@ a.diary-src:hover { text-decoration: underline; }
   border: 1px solid rgba(252, 211, 77, .35); background: rgba(252, 211, 77, .08);
   color: #fcd34d; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px;
 }
+/* ---- 调研视图(R5,SPEC-RESEARCH §7) ---- */
+.research-layout { display: grid; grid-template-columns: 260px 1fr 280px; gap: 12px; height: 100%; min-height: 480px; }
+.rs-left-h { display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 6px 0; }
+.rs-scene { display: block; width: 100%; text-align: left; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 6px; cursor: pointer; color: var(--text); }
+.rs-scene.active { border-color: rgba(59, 130, 246, .5); background: var(--accent-soft); }
+.rs-scene b { display: block; }
+.rs-scene span { display: block; }
+.rs-main-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rs-msgs { max-height: 340px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.rs-msg { margin-bottom: 8px; }
+.rs-msg-FDE { border-left: 2px solid var(--accent); padding-left: 8px; }
+.rs-msg-AI { border-left: 2px solid var(--muted); padding-left: 8px; }
+.rs-msg-system { color: var(--red); font-size: 12px; }
+.rs-input { display: flex; gap: 6px; margin: 8px 0; }
+.rs-input textarea { flex: 1; }
+.rs-drafts .rs-draft { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+.rs-draft input, .rs-draft textarea, .rs-draft select { width: 100%; margin-bottom: 4px; }
+.rs-right .rs-kb-form { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.rs-kb-hit { border-bottom: 1px solid var(--border); padding: 4px 0; }

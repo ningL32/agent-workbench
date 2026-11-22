@@ -150,7 +150,19 @@ function renderStats(ov) {
 function renderActions(ov) {
   const root = rootEl;
   if (!root) return;
-  const el = root.querySelector('#ov-actions');
+    // v2.9.75 行动条:可沉淀 chip(决议③ 饥饿可观测,非零显示,直达调研)
+  apiGet('/api/research/kb/eligible').then((r) => {
+    const n = Number(r && r.count) || 0;
+    if (!n || !rootEl) return;
+    const el2 = rootEl.querySelector('#ov-actions');
+    if (!el2) return;
+    const chip = document.createElement('a');
+    chip.href = '#/research';
+    chip.className = 'chip';
+    chip.innerHTML = `可沉淀 ${n} 条`;
+    el2.appendChild(chip);
+  }).catch(() => {});
+const el = root.querySelector('#ov-actions');
   if (!el) return;
   const t = (ov && ov.tasks) || {};
   const overdue = Number(t.overdue) || 0;
