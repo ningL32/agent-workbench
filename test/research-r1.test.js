@@ -58,3 +58,32 @@ test('llm.chat：paper 通道零出网返回显式降级(含 reason,空文本)',
   assert.strictEqual(r.text, '');
   assert.ok(r.paperReason, 'paperReason 可观测');
 });
+
+test('migration：kb_fts 能力探测落 meta+report(本机节点上恒 ∈ {0,1});四张调研表建成', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { runMigration } = require('../lib/migration');
+  const src = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-research-mig-'));
+  try {
+    fs.writeFileSync(path.join(src, 'messages.json'), JSON.stringify([
+      { id: 'm-r1', title: '迁移夹具', occurredAt: '2026-11-23T00:00:00Z' },
+    ]));
+    const report = runMigration({ dataDir: src, units: ['messages'], now: 0 });
+    assert.ok(typeof report.kbFts === 'boolean', 'report.kbFts 布尔(能力探测结果)');
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(path.join(src, 'fde.db'), { readOnly: true });
+    try {
+      const flag = db.prepare("SELECT value FROM meta WHERE key='kb_fts_available'").get();
+      assert.ok(flag && ['0', '1'].includes(flag.value), 'kb_fts_available 落 meta(失败也留痕)');
+      for (const t of ['interviews', 'interview_messages', 'task_drafts', 'kb_documents']) {
+        const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(t);
+        assert.ok(row, `表 ${t} 已建`);
+      }
+    } finally {
+      db.close();
+    }
+  } finally {
+    fs.rmSync(src, { recursive: true, force: true });
+  }
+});
