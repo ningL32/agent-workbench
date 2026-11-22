@@ -153,3 +153,48 @@ test('R2 草稿闸门:accept 修订/409 守卫/link 绑回/未知 404', async ()
     fs.rmSync(ctx.dataDir, { recursive: true, force: true });
   }
 });
+
+// ---------- R3:知识库(闭环 B) ----------
+test('R3 kb:沉淀→中文双字词检索命中→eligible 真实计数(done 且未沉淀)', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const store = require('../lib/store');
+  const kb = require('../lib/research/kb');
+  const interviews = require('../lib/research/interviews');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-research-kb-'));
+  // store.loadTasks 需要 ctx.tasksPath(与 appAssembler 同口径)
+  const ctx = { dataDir, tasksPath: path.join(dataDir, 'tasks.json'), taskEventsPath: path.join(dataDir, 'task_events.json') };
+  try {
+    // 种 done 任务 x2(一个已沉淀,一个未沉淀)+ 一个 doing
+    const tasksData = store.loadTasks(ctx);
+    const mk = (id, status) => ({ id, title: `任务${id}`, status, priority: 'medium', artifacts: [], createdAt: '2026-11-23T00:00:00Z', updatedAt: '2026-11-23T00:00:00Z' });
+    tasksData.tasks.push(mk('t-done1', 'done'), mk('t-done2', 'done'), mk('t-doing', 'doing'));
+    store.saveTasks(ctx, tasksData);
+    // eligible 先=2(两个 done 未沉淀)
+    assert.strictEqual(kb.eligible(ctx).count, 2, '可沉淀=done 未沉淀');
+    // 沉淀 t-done1(中文标题+正文含双字词"报表")
+    const s = kb.sediment(ctx, { sourceTaskId: 't-done1', kind: 'evidence', title: '某客户报表改造验收', body: '交付按月导出报表功能,验收通过;踩坑:时区切串要本地化。' });
+    assert.ok(s.ok, '沉淀成功');
+    assert.strictEqual(kb.eligible(ctx).count, 1, '沉淀后 eligible 归一(饥饿可观测,决议③)');
+    // 中文双字词检索(LIKE 层,FTS5 trigram 不命中的口径)
+    const hits = kb.search(ctx, '报表');
+    assert.strictEqual(hits.length, 1, '双字词命中');
+    assert.strictEqual(hits[0].source_task_id, 't-done1', '命中带 task 出处(闭环 B 出处链)');
+    assert.strictEqual(kb.search(ctx, '不存在的词组').length, 0, '未命中空返');
+    assert.strictEqual(kb.search(ctx, '').length, 0, '空查询空返');
+    // 路由:POST documents 400(缺 body)/201;GET search 200
+    const app = buildApp({ poller: 'manual', dataDir: ctx.dataDir, configPath: path.join(ctx.dataDir, 'config.json'), configDir: ctx.dataDir });
+    const api = (method, p, body) => app.fetch(method, p, { headers: body === undefined ? undefined : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+    const bad = await api('POST', '/api/research/kb/documents', { title: '缺body' });
+    assert.strictEqual(bad.status, 400);
+    const okc = await api('POST', '/api/research/kb/documents', { sourceTaskId: 't-done2', kind: 'diary', title: '日报沉淀', body: '内容' });
+    assert.strictEqual(okc.status, 201);
+    const sr = await api('GET', '/api/research/kb/search?q=%E6%97%A5%E6%8A%A5');
+    assert.strictEqual(sr.status, 200);
+    assert.strictEqual(sr.body.length, 1, 'URL 编码中文查询命中');
+    app.close();
+  } finally {
+    fs.rmSync(ctx.dataDir, { recursive: true, force: true });
+  }
+});
