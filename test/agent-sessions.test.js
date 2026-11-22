@@ -30,6 +30,11 @@ const zlib = require('node:zlib');
 
 const { buildApp } = require('./helpers/appAssembler');
 const { createWorkbuddyDb } = require('./helpers/workbuddy-fixture');
+
+// zlib.zstd* 是 Node 22.15+/23.8+ 才有的 API（引擎地板 22.13 的 node:sqlite 与它无关）——
+// 产品侧 dshDecompressSession 对缺失 zstd 优雅降级（红线 8），测试侧同款能力门控：
+// 缺 zstd 的运行环境跳过 zstd 依赖用例（同 agent-activity.test.js 先例）。
+const HAS_ZSTD = typeof zlib.zstdCompressSync === 'function';
 const sessionRef = require('../lib/sessionRef');
 const {
   listAgentSessions,
@@ -251,7 +256,7 @@ test.before(() => {
   globalThis.croot = croot;
   // dsh
   const droot = mk(path.join(tmpRoot, 'dsh', 'sessions'));
-  writeMultiFrameZstd(path.join(droot, ...DSH_REL.split('/')), dshLines);
+  if (HAS_ZSTD) writeMultiFrameZstd(path.join(droot, ...DSH_REL.split('/')), dshLines);
   write(path.join(droot, ...DSH_ROLL_REL.split('/')), dshRollLines.join('\n') + '\n', NOW - 180 * MIN);
   globalThis.droot = droot;
   // codex
@@ -436,6 +441,10 @@ test('claude 转录：tool_result is_error → status error', () => {
 });
 
 test('dsh 转录：多帧 zstd 逐帧解压、流水行跳过、tool/call+result 配对、标题=首条 user 文本', () => {
+  if (!HAS_ZSTD) {
+    test.skip('node 缺 zstdCompressSync，跳过 zstd 用例');
+    return;
+  }
   const ref = sessionRef.encodeRef({ s: 'dsh', k: 'file', v: { path: DSH_REL } });
   const r = getAgentTranscript(buildCfg(), ref, { now: NOW });
   assert.equal(r.degraded, false);
@@ -467,6 +476,10 @@ test('dsh 转录：rollout 明文分支同构', () => {
 });
 
 test('dsh：zstdDecompressFrames 与单帧文件兼容；伪 magic 帧跳过不致命', () => {
+  if (!HAS_ZSTD) {
+    test.skip('node 缺 zstdCompressSync，跳过 zstd 用例');
+    return;
+  }
   const single = zlib.zstdCompressSync(Buffer.from('{"type":"session"}\n'));
   assert.equal(zstdDecompressFrames(single).text, '{"type":"session"}\n');
   const bogus = Buffer.concat([single, Buffer.from([0x28, 0xb5, 0x2f, 0xfd]), Buffer.from('garbage')]);
@@ -551,7 +564,10 @@ test('列表：六源各自可出清单（dsh 标题=首条 user 文本、codex 
     assert.equal(sessionRef.decodeRef(r.items[0].ref).s, agent);
   }
   const dshList = listAgentSessions(buildCfg(), { agent: 'dsh', now: NOW });
-  assert.ok(dshList.items.some((i) => i.title === '部署到测试环境'), 'dsh 标题取首条 user 文本前 60 字');
+  // zstd 夹具只在有 zstd 能力的 node 上构建；缺失时 dsh 清单只剩明文 rollout 条目，
+  // 标题断言取对应来源的首条 user 文本（同一语义：标题=首条 user 文本前 60 字）
+  const dshExpectedTitle = HAS_ZSTD ? '部署到测试环境' : '明文 rollout 兼容';
+  assert.ok(dshList.items.some((i) => i.title === dshExpectedTitle), 'dsh 标题取首条 user 文本前 60 字');
   const claudeList = listAgentSessions(buildCfg(), { agent: 'claude', now: NOW });
   assert.ok(claudeList.items.some((i) => i.title === '修一下登录 bug'));
   const wb = listAgentSessions(buildCfg(), { agent: 'workbuddy', now: NOW });
