@@ -827,3 +827,13 @@ test('派工词：zcode db 首条真人指令（注入 part 跳过）+ 列表按
   assert.equal(l.items[0].agent, 'zcode');
   assert.ok(l.items[0].ref, 'ref 回传可溯源');
 });
+
+// v2.9.70 会话成果摘要：outcome 只增字段（工具调用数/错误数/文件 token 提取）
+test('outcome：zcode 转录带净效果（工具计数与文件 token），降级会话无 outcome', () => {
+  const ref = sessionRef.encodeRef({ s: 'zcode', k: 'session', v: { id: `sess_${UUID1}` } });
+  const r = getAgentTranscript(buildCfg(), ref, { now: NOW });
+  assert.ok(r.outcome && Number.isInteger(r.outcome.toolCalls) && r.outcome.toolCalls >= 2, '工具调用计数');
+  assert.ok(Array.isArray(r.outcome.files), 'files 是数组');
+  assert.ok(r.outcome.files.every((f) => f.includes('.') || f.includes('/') || f.includes('\\')), '文件 token 是路径形态');
+  assert.ok(r.outcome.filesTouched <= r.outcome.toolCalls, '文件数 ≤ 工具调用数');
+});

@@ -653,7 +653,13 @@ export async function openSessionReader(ref, opts = {}) {
   }
 
   const msgs = Array.isArray(data.messages) ? data.messages : [];
+  // v2.9.70 成果摘要（净效果）：outcome 只增字段，旧后端无键时整行不渲染
+  const oc = data.outcome;
+  const outcomeHtml = oc && Number(oc.toolCalls) > 0
+    ? `<div class="rd-trunc">${icon('activity')}<span>净效果：工具调用 ${esc(String(oc.toolCalls))}${Number(oc.toolErrors) > 0 ? `（错 ${esc(String(oc.toolErrors))}）` : ''} · 涉及文件 ${esc(String(oc.filesTouched))}${Array.isArray(oc.files) && oc.files.length ? ` — ${esc(oc.files.slice(0, 3).join(' · '))}${oc.files.length > 3 ? ' …' : ''}` : ''}</span></div>`
+    : '';
   box.innerHTML = `${metaHtml}
+    ${outcomeHtml}
     ${data.truncated ? `<div class="rd-trunc">${icon('alert-triangle')}<span>仅载入前 ${esc(String(msgs.length))} / 共 ${esc(totalStr)} 条（服务端截断）</span></div>` : ''}
     <div class="rd-body">
       <div class="rd-scroll" id="rd-scroll">
