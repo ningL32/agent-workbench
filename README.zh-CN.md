@@ -4,6 +4,11 @@
 
 当前版本 v2.9.68
 
+[![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node](https://img.shields.io/badge/node-%E2%89%A522.13-blue.svg)
+![runtime deps](https://img.shields.io/badge/runtime%20deps-zero-9cf.svg)
+
 一套装进 [DSH](https://www.npmjs.com/package/@deepseek-ai/dsh) 的 **local-first 工作台插件**：把已经跑在你机器上的 AI 编码智能体（ZCode、Claude Code、Codex、OpenCode、DSH、WorkBuddy…）变成一支**可观测、可问责的团队**。
 
 ![总览](docs/assets/overview.png)

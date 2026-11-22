@@ -1,0 +1,22 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        # floor (22.13 = engines.node, node:sqlite contract) + current LTS line
+        node: ['22.13.0', '24.x']
+        os: [ubuntu-latest, windows-latest] # product targets Windows; ubuntu keeps the floor honest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test

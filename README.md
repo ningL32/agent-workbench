@@ -2,6 +2,11 @@
 
 [English](README.md) | [中文文档](README.zh-CN.md)
 
+[![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node](https://img.shields.io/badge/node-%E2%89%A522.13-blue.svg)
+![runtime deps](https://img.shields.io/badge/runtime%20deps-zero-9cf.svg)
+
 A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek-ai/dsh) that turns the AI coding agents already running on your machine (ZCode, Claude Code, Codex, OpenCode, DSH, WorkBuddy…) into an **observable, accountable team**.
 
 ![Overview](docs/assets/overview.png)
