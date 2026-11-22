@@ -1,8 +1,7 @@
 {
   "name": "fde-console",
   "version": "2.9.68",
-  "private": true,
-  "description": "FDE 指挥台 DSH 持久化插件（零 npm 运行时依赖；lib/ 业务层 CJS 经 createRequire 桥接）",
+  "description": "Super Workbench (fde-console) — local-first workbench plugin for DeepSeek Harness (DSH): turns your local AI coding agents into an observable, accountable team. Zero runtime dependencies; data stays on your machine.",
   "license": "MIT",
   "icon": "./assets/icon.svg",
   "main": "./plugin/index.mjs",
