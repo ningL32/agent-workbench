@@ -20,7 +20,7 @@ Super Workbench 是装进 DSH 的一个插件。装好之后，每次启动 DSH�
 |---|---|---|
 | DSH 宿主（@deepseek-ai/dsh） | **0.2.1-rc.2** | 本插件按此版本全套验证；升 DSH 后需重跑兼容探针 |
 | 超级工作台（fde-console）插件 | **2.9.68**（与 package.json 同步） | 与 DSH 0.2.1-rc.2 配套；运行期可在「总览 → 版本与兼容性」卡自证 |
-| Node.js | **≥22.13 LTS**（实测 v24.15.0） | 唯一运行时依赖；node:sqlite 门槛（会话观测/阅读器必需），Node 18/20 不可用 |
+| Node.js | **≥22.13 LTS**（实测 v24.15.0） | 唯一运行时依赖；node:sqlite 门槛（会话观测/阅读器必需），Node 18/20 不可用。注：`zlib.zstd*`（DSH 会话 zstd 日志解压）需 ≥22.15，22.13/22.14 上 DSH 源自动降级只读明文 rollout，不影响其余功能 |
 | dsh-better-sidebar（可选，原生侧栏 tab） | 0.28.0 | 要求 DSH 0.2.1-rc.1+ |
 | 钉钉 dws（雷达功能·可选） | 1.0.59（实测） | 需完成钉钉登录；不用任务雷达可不装 |
 | 飞书 lark-cli（雷达功能·可选） | 1.0.98（实测） | `npm i -g @larksuite/cli`；需 `lark-cli config init` 应用配置 + `auth login` 用户授权；不用飞书妙记可不装 |

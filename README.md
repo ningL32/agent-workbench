@@ -49,7 +49,7 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 | | |
 |---|---|
 | OS | Windows (verified; macOS/Linux not yet tested) |
-| Node.js | **≥ 22.13** (uses built-in `node:sqlite`) |
+| Node.js | **≥ 22.13** (uses built-in `node:sqlite`) — on 22.13/22.14 the DSH session source reads plain rollouts only; zstd-compressed DSH session logs (`zlib.zstd*`) need ≥ 22.15 and degrade gracefully below it |
 | DSH | 0.2.1-rc.2 (`@deepseek-ai/dsh`) |
 | pnpm | on PATH (plugin install forwards to it) |
 

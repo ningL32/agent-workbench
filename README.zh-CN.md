@@ -51,7 +51,7 @@
 | | |
 |---|---|
 | 操作系统 | Windows（已实测；macOS/Linux 未验证） |
-| Node.js | **≥ 22.13**（依赖内置 `node:sqlite`，Node 18/20 不可用） |
+| Node.js | **≥ 22.13**（依赖内置 `node:sqlite`，Node 18/20 不可用）；22.13/22.14 上 DSH 会话源只读明文 rollout，zstd 压缩的 DSH 会话日志（`zlib.zstd*`）需 ≥ 22.15，低版本自动优雅降级 |
 | DSH | 0.2.1-rc.2（`@deepseek-ai/dsh`） |
 | pnpm | 在 PATH（插件安装走 pnpm 转发） |
 
