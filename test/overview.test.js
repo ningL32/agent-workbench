@@ -393,3 +393,32 @@ test('v1.4 currentTask 透传 dueDate/priority', async () => {
 
   await api('DELETE', `/api/tasks/${t.body.id}`);
 });
+
+// v2.9.69 周期与验收指标：cycle 只增字段（验收数/中位时长/按 agentId 计数）
+test('cycle：done 任务计入 30d 验收与 perAgentAccepted；无完成样本时中位=null', async () => {
+  const before = (await api('GET', '/api/overview')).body.cycle;
+  const t1 = await api('POST', '/api/tasks', { title: 'cycle 验收甲', agentId: 'workbuddy' });
+  const t2 = await api('POST', '/api/tasks', { title: 'cycle 验收乙', agentId: 'workbuddy' });
+  const t3 = await api('POST', '/api/tasks', { title: 'cycle 验收丙' });
+  await api('PATCH', `/api/tasks/${t1.body.id}`, { status: 'done' });
+  await api('PATCH', `/api/tasks/${t2.body.id}`, { status: 'done' });
+
+  const r = (await api('GET', '/api/overview')).body.cycle;
+  assert.strictEqual(r.accepted30d, before.accepted30d + 2, '两笔 done 计入 30d 验收');
+  assert.strictEqual(r.perAgentAccepted.workbuddy, (before.perAgentAccepted.workbuddy || 0) + 2, '按 agentId 计数');
+  const noOwnerBefore = before.perAgentAccepted['(无属主)'] || 0;
+  assert.ok(!r.perAgentAccepted['(无属主)'] || r.perAgentAccepted['(无属主)'] === noOwnerBefore, '丙未 done，无属主计数不增');
+  assert.ok(r.medianAcceptHours === null || typeof r.medianAcceptHours === 'number', '中位时长=数字或 null');
+  assert.ok(r.medianAcceptHours === null || r.medianAcceptHours >= 0, '时长非负');
+
+  // 丙保持 todo：再验 done→非 done 回退不清账（completedAt 清 null → 出窗）
+  await api('DELETE', `/api/tasks/${t3.body.id}`);
+  const t4 = await api('POST', '/api/tasks', { title: 'cycle 完成又重开', agentId: 'workbuddy' });
+  await api('PATCH', `/api/tasks/${t4.body.id}`, { status: 'done' });
+  await api('PATCH', `/api/tasks/${t4.body.id}`, { status: 'doing' }); // 重开 → completedAt 清 null → 不再计入
+  const r2 = (await api('GET', '/api/overview')).body.cycle;
+  assert.strictEqual(r2.accepted30d, r.accepted30d, '重开任务不计入验收');
+  await api('DELETE', `/api/tasks/${t1.body.id}`);
+  await api('DELETE', `/api/tasks/${t2.body.id}`);
+  await api('DELETE', `/api/tasks/${t4.body.id}`);
+});

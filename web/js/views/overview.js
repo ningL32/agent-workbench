@@ -129,11 +129,16 @@ function renderStats(ov) {
   const overdue = Number(t.overdue) || 0;
   const g = (ov && ov.gitea) || {};
   const ok = !!g.ok;
+  // v2.9.69 周期与验收指标（只增字段）：旧后端无 cycle 时整卡按 0/null 中性降级
+  const cyc = (ov && ov.cycle) || {};
+  const acc30 = Number(cyc.accepted30d) || 0;
+  const med = cyc.medianAcceptHours;
   root.querySelector('#ov-stats').innerHTML = `
     <div class="stat"><b>${total}</b><span>任务总数（进行中 ${Number(t.doing) || 0}）</span></div>
     <div class="stat"><b style="color:${overdue > 0 ? 'var(--red)' : 'var(--muted)'}">${overdue}</b><span>逾期任务</span></div>
     <div class="stat"><b>${Number(ov.agents) || 0}</b><span>在册智能体</span></div>
     <div class="stat"><b>${Number(ov.activities24h) || 0}</b><span>24h 团队动态</span></div>
+    <div class="stat"><b>${acc30}</b><span>30d 验收${med != null ? ` · 中位 ${med}h` : ''}</span></div>
     <div class="stat"><b style="color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? '已连接' : '异常'}</b>
       <span>Gitea · ${g.lastError ? esc(String(g.lastError)).slice(0, 24) : `拉取于 ${fmtAgo(g.lastPollAt)}`}</span></div>`;
   renderActions(ov);
