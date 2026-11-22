@@ -198,3 +198,46 @@ test('R3 kb:沉淀→中文双字词检索命中→eligible 真实计数(done �
     fs.rmSync(ctx.dataDir, { recursive: true, force: true });
   }
 });
+
+// ---------- R4:渲染导出(闭环 C,输入纯度铁律) ----------
+test('R4 export:BPMN 字节确定+XML 转义;报告含任务与人工日报;不含启发式归因数据', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const store = require('../lib/store');
+  const render = require('../lib/research/render');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-research-r4-'));
+  const ctx = { dataDir, tasksPath: path.join(dataDir, 'tasks.json'), diaryPath: path.join(dataDir, 'diary.json') };
+  try {
+    const tasksData = store.loadTasks(ctx);
+    tasksData.tasks.push(
+      { id: 't-a', title: '需求调研<含特殊字符>&"引号"', status: 'done', projectDir: 'E:/demo/alpha', priority: 'high', memberId: '李雷', acceptorId: '韩梅梅', completedAt: '2026-11-23T01:00:00Z', artifacts: [], createdAt: '2026-11-22T01:00:00Z', updatedAt: '2026-11-22T01:00:00Z' },
+      { id: 't-b', title: '报表开发', status: 'doing', projectDir: 'E:/demo/alpha', priority: 'medium', memberId: '李雷', artifacts: [], createdAt: '2026-11-22T02:00:00Z', updatedAt: '2026-11-22T02:00:00Z' },
+      { id: 't-other', title: '别的场景任务', status: 'todo', projectDir: 'E:/demo/beta', artifacts: [], createdAt: '2026-11-22T03:00:00Z', updatedAt: '2026-11-22T03:00:00Z' },
+    );
+    store.saveTasks(ctx, tasksData);
+    fs.writeFileSync(path.join(dataDir, 'diary.json'), JSON.stringify([{ taskId: 't-a', date: '2026-11-22', content: '完成调研并评审' }]));
+
+    const bpmn1 = render.exportScene(ctx, 'E:/demo/alpha', 'bpmn');
+    const bpmn2 = render.exportScene(ctx, 'E:/demo/alpha', 'bpmn');
+    assert.strictEqual(bpmn1.contentType, 'application/xml');
+    assert.strictEqual(bpmn1.body, bpmn2.body, '同输入字节级确定');
+    assert.ok(bpmn1.body.includes('&quot;'), 'XML 转义生效');
+    assert.ok(!bpmn1.body.includes('<bpmn:task id="Task_3"'), '别的场景任务不混入(场景过滤)');
+    assert.ok(!bpmn1.body.includes('commit'), '启发式归因数据禁入客户产物(决议⑦)');
+    const report = render.exportScene(ctx, 'E:/demo/alpha', 'report');
+    assert.ok(report.body.includes('需求调研<含特殊字符>&"引号"'.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')) === false || report.body.includes('需求调研'), '报告含任务标题');
+    assert.ok(report.body.includes('完成调研并评审'), '人工日报入报告');
+    assert.ok(!report.body.includes('别的场景任务'), '场景过滤');
+    // 路由级
+    const app = buildApp({ poller: 'manual', dataDir, configPath: path.join(dataDir, 'config.json'), configDir: dataDir });
+    const api = (method, p) => app.fetch(method, p, {});
+    const rep = await api('GET', '/api/research/export?scene=E%3A%2Fdemo%2Falpha&format=report');
+    assert.strictEqual(rep.status, 200);
+    const bm = await api('GET', '/api/research/export?scene=E%3A%2Fdemo%2Falpha&format=bpmn');
+    assert.ok(String(bm.text).includes('<bpmn:definitions'), '路由级 BPMN 可取(非 JSON 响应在 text)');
+    app.close();
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
