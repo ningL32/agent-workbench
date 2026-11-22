@@ -45,13 +45,23 @@ test('backupOnce：时间戳目录 + 全部 JSON 备齐 + manifest 清单；子�
 test('保留策略：keep=2 时第三份备份触发滚动清理（最旧的出局）', () => {
   const { src, out } = mkFixture();
   try {
+    // 目录名 = lib/backup.js 的**本地时间**戳（ts.getHours() 系）——期望值按本机时区独立复算，
+    // 不硬编码 UTC 字面量（原字面量在 UTC/西半球 CI 机器上字符串比较必挂）。
+    const localStamp = (ms) => {
+      const d = new Date(ms);
+      const p = (n) => String(n).padStart(2, '0');
+      return `backup-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    };
     const base = Date.parse('2026-10-22T10:00:00Z');
     backupOnce({ source: src, out, now: base, keep: 2 });
     backupOnce({ source: src, out, now: base + 60000, keep: 2 });
     backupOnce({ source: src, out, now: base + 120000, keep: 2 });
     const dirs = fs.readdirSync(out).filter((n) => n.startsWith('backup-')).sort();
     assert.strictEqual(dirs.length, 2, `滚动后应保留 2 份，实际 ${dirs.length}`);
-    assert.ok(dirs[0] > 'backup-20261022-100100', '最旧的一份（10:00:00）已被清理');
+    const oldestExpected = localStamp(base); // +08:00 机器上 = backup-20261022-180000
+    const middleExpected = localStamp(base + 60000);
+    assert.ok(!dirs.includes(oldestExpected), `最旧的一份（${oldestExpected}）已被清理`);
+    assert.ok(dirs[0] > oldestExpected && dirs[0] >= middleExpected, '留存的是较新的两份');
   } finally {
     fs.rmSync(src, { recursive: true, force: true });
     fs.rmSync(out, { recursive: true, force: true });

@@ -25,10 +25,16 @@ function iso(ts) {
   return new Date(ts).toISOString();
 }
 
-test('localYmd：本地时区日期（+08:00 机器上 UTC 04:00 = 当日 12:00）', () => {
-  assert.equal(localYmd(NOW.getTime()), '2026-10-30');
-  // UTC 2026-10-30T17:00Z = 本地 31 日 01:00 → 归 10-31
-  assert.equal(localYmd(Date.parse('2026-10-30T17:00:00.000Z')), '2026-10-31');
+test('localYmd：本地时区日期（按本机时区独立复算，不硬编码时区偏移）', () => {
+  // 独立 oracle：用 Date 自身的时区偏移复算本地日历日（不调用 localYmd）。
+  // 原 +08:00 硬编码在 UTC CI 机器上必挂（17:00Z 在 +08:00 归次日、在 UTC 归当日）。
+  const localYmdOracle = (ms) =>
+    new Date(ms - new Date(ms).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const tsA = Date.parse('2026-10-30T04:00:00.000Z');
+  const tsB = Date.parse('2026-10-30T17:00:00.000Z');
+  assert.equal(localYmd(tsA), localYmdOracle(tsA)); // +08:00 机器上 = '2026-10-30'
+  // UTC 17:00Z 的本地归属因时区而异（+08:00 → 10-31；UTC → 10-30），语义=「本地日历日」
+  assert.equal(localYmd(tsB), localYmdOracle(tsB));
 });
 
 test('聚合：多源多日落桶、时长口径、同日累加、出窗出局', () => {
