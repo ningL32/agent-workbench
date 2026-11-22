@@ -241,3 +241,48 @@ test('R4 export:BPMN 字节确定+XML 转义;报告含任务与人工日报;不�
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+// ---------- Tier1:冷启动导入 / 晨会简报 / 场景健康 ----------
+test('Tier1:KB 冷启动导入幂等;digest 聚合确定性;health 状态口径', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const store = require('../lib/store');
+  const kb = require('../lib/research/kb');
+  const health = require('../lib/research/health');
+  const digest = require('../lib/digest');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-tier1-'));
+  const ctx = { dataDir, tasksPath: path.join(dataDir, 'tasks.json'), diaryPath: path.join(dataDir, 'diary.json'), activitiesPath: path.join(dataDir, 'activities.json'), config: {} };
+  try {
+    // 种数据:周报/日报 JSON + 人工日报 + 场景任务(stale:updatedAt 200h 前)
+    fs.writeFileSync(path.join(dataDir, 'weekly.json'), JSON.stringify({ weekKey: '2026-W47', generatedAt: '2026-11-23T01:00:00Z', report: '本周完成调研模块。' }));
+    fs.writeFileSync(path.join(dataDir, 'report-daily.json'), JSON.stringify({ dayKey: '2026-11-23', generatedAt: '2026-11-23T01:00:00Z', report: '昨日日报内容。' }));
+    fs.writeFileSync(path.join(dataDir, 'diary.json'), JSON.stringify([{ taskId: 't-s1', date: '2026-11-22', content: '调研访谈走查' }]));
+    const tasksData = store.loadTasks(ctx);
+    const old = new Date(Date.now() - 200 * 3600000).toISOString();
+    tasksData.tasks.push(
+      { id: 't-s1', title: '场景一任务', status: 'doing', projectDir: 'E:/demo/alpha', artifacts: [], createdAt: old, updatedAt: old },
+      { id: 't-s2', title: '场景二任务', status: 'todo', projectDir: 'E:/demo/beta', dueDate: '2026-11-20', artifacts: [], createdAt: old, updatedAt: old },
+    );
+    store.saveTasks(ctx, tasksData);
+    // 冷启动:导入 3 条(周报+日报+人工日报),幂等 409 语义
+    const b1 = kb.bootstrapImport(ctx);
+    assert.strictEqual(b1.imported, 3, '周报+日报+人工日报三条入 KB');
+    const b2 = kb.bootstrapImport(ctx);
+    assert.strictEqual(b2.error, 'ALREADY_DONE', '幂等守卫 409 语义');
+    assert.ok(kb.search(ctx, '调研模块').length >= 1, '导入后可检索');
+    // 场景健康:200h 前 updatedAt → stale
+    const h = health.sceneHealth(ctx);
+    const alpha = h.scenes.find((s) => s.projectDir === 'E:/demo/alpha');
+    assert.strictEqual(alpha.status, 'stale', '200h 无更新 → stale');
+    assert.strictEqual(h.staleCount, 2, '两个场景均非 ok');
+    // 晨会简报:含逾期/可沉淀/场景健康段
+    const d = digest.buildDigest(ctx);
+    assert.ok(d.markdown.includes('逾期任务 1'), '逾期聚合');
+    assert.ok(d.markdown.includes('可沉淀进知识库 0 条'), 'kb eligible 并入(夹具无 done 任务,期望 0)');
+    assert.ok(d.markdown.includes('场景健康'), '健康段并入');
+    assert.ok(d.counts.badScenes >= 1, '计数返回');
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});

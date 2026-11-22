@@ -631,6 +631,13 @@ function setupPoller(ctx, mode) {
       } catch (err) {
         console.error('[poller] IM 摘要异常:', (err && err.message) || err);
       }
+      // v2.9.77 场景健康预警（Tier1-③）：每日一次,stale/warn 场景经 IM 推送(内部去重守卫)
+      try {
+        const h = require('../../lib/research/health').maybeWarnScenes(ctx, Date.now());
+        if (h.sent) console.log('[research] 场景健康预警已推送');
+      } catch (err) {
+        console.error('[research] 场景健康预警失败(不阻塞):', (err && err.message) || err);
+      }
       // v2.9.41 每日自动备份（默认开启，纯本地拷贝；到点且当日未跑才跑，失败只记日志）
       try {
         const bk = require('../../lib/backup.js').maybeDailyBackup(ctx);

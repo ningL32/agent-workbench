@@ -34,6 +34,7 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 
 ## Features
 
+- **Research (场景调研)** — interview customers, AI drafts gated by humans, validated tasks with evidence flow into the board; KB reuses delivered scenes for future engagements (SPEC-RESEARCH.md)
 - **Task board** — kanban with timeline, acceptor sign-off, deep links, priorities, due dates, daily diary per task
 - **Agent observation** — six-source adapters, session lists, transcript reader, running-now detection, per-project tabs
 - **Work search** — `Ctrl+K` across task titles, session titles, commit messages and diaries
@@ -90,7 +91,8 @@ Then start the instance and explore; delete the seeded JSON files to reset.
 
 | View | What it shows |
 |---|---|
-| Overview | stats, agent heatmap, digital-worker reports (daily/weekly), version matrix |
+| Overview | stats, agent heatmap, digital-worker reports (daily/weekly), cycle metrics, morning digest, version matrix |
+| Research | customer interviews → AI drafts → human gate → tasks with evidence; knowledge base reuse |
 | Task Radar | meeting transcripts → AI task decomposition → inbox gate |
 | Task Board | kanban: timeline, acceptor, deep links, diary, project filters |
 | Agents | live activity feed across six sources + session reader |

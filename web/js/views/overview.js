@@ -11,7 +11,7 @@
 //   syncTopology 模式：agents/members/columns 首挂拉取缓存，tasks 随 10s tick 刷新喂 topo.update
 //   （内部规范化指纹脏比较，无变化跳过重绘，参照 board.js snapshotKey 模式）
 import { apiGet, apiPost } from '../api.js';
-import { esc, toast, fmtAgo, fmtFull, startPolling, icon } from '../ui.js';
+import { esc, toast, fmtAgo, fmtFull, startPolling, icon, openModal } from '../ui.js';
 import { mount as mountTopology } from './topology.js';
 import { openSessionReader } from './agents.js';
 
@@ -142,6 +142,33 @@ function renderStats(ov) {
     <div class="stat"><b style="color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? '已连接' : '异常'}</b>
       <span>Gitea · ${g.lastError ? esc(String(g.lastError)).slice(0, 24) : `拉取于 ${fmtAgo(g.lastPollAt)}`}</span></div>`;
   renderActions(ov);
+  // v2.9.77 晨会简报:聚合既有数源为可复制 Markdown(确定性,零 LLM),供站会/客户群直接粘贴
+  apiGet('/api/digest').then((d) => {
+    const el = rootEl.querySelector('#ov-actions');
+    if (!el || !d || !d.markdown) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip';
+    btn.textContent = '晨会简报';
+    btn.addEventListener('click', () => showDigestModal(d));
+    el.appendChild(btn);
+  }).catch(() => {});
+}
+
+function showDigestModal(d) {
+  const box = document.createElement('div');
+  const pre = document.createElement('pre');
+  pre.style.cssText = 'white-space:pre-wrap;font-size:12px;max-height:420px;overflow:auto';
+  pre.textContent = d.markdown;
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'btn btn-sm';
+  copy.textContent = '复制 Markdown';
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(d.markdown); toast('已复制'); } catch (e) { toast('复制失败,请手动选择'); }
+  });
+  box.append(copy, pre);
+  openModal({ title: '晨会简报(复制给客户群/站会)', body: box, wide: true });
 }
 
 // ---- 驾驶舱行动条（2026-11-03，业主早期拍板「薄条+跳转不做仪表盘」）：统计卡下一行 thin chips，

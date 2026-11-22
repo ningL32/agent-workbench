@@ -2,7 +2,7 @@
 
 # 超级工作台（fde-console · Super Workbench）
 
-当前版本 v2.9.76
+当前版本 v2.9.77
 
 [![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -36,6 +36,7 @@
 
 ## 功能清单
 
+- **场景调研** —— 访谈客户 → AI 草稿 → 人工闸门 → 带证据任务入看板;知识库沉淀历史场景复利下次访谈(SPEC-RESEARCH.md)
 - **任务看板** —— 看板 + 时间轴、验收人签收、深链、优先级、截止日、每任务日报
 - **智能体观测** —— 六源适配器、会话列表、全文阅读器、运行中检测、按项目分组
 - **工作搜索** —— `Ctrl+K` 跨任务标题/会话标题/提交信息/日报
@@ -91,7 +92,8 @@ node scripts/seed-demo.js --data-dir <目录> --force # 自定义目录 / 覆盖
 
 | 视图 | 一句话 |
 |---|---|
-| 总览 | 统计卡 + Agent 活跃热力图 + 数字员工日报/周报 + 任务拓扑 + 版本矩阵 |
+| 总览 | 统计卡 + Agent 活跃热力图 + 数字员工日报/周报 + 周期验收指标 + 晨会简报 + 版本矩阵 |
+| 调研 | 客户访谈 → AI 草稿 → 人工闸门 → 带证据任务;知识库沉淀复用 |
 | 任务雷达 | 钉钉听记/飞书妙记 → AI 拆解 → 收件箱闸门（确认后才入看板） |
 | 任务看板 | 看板：时间轴、验收人、深链、日报、项目过滤 |
 | 智能体 | 六源实时动态流 + 会话全文阅读器 |

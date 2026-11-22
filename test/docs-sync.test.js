@@ -231,6 +231,9 @@ const UNDOCUMENTED_OK = new Set([
   'POST /api/research/kb/documents',
   'GET /api/research/kb/search',
   'GET /api/research/export',
+  'POST /api/research/kb/bootstrap',
+  'GET /api/research/health',
+  'GET /api/digest',
   // —— 知识库学习（v2.9.44+，功能契约见 docs/SPEC-LEARN.md）——
   'GET /api/learn/status',
   'POST /api/learn/probe',
