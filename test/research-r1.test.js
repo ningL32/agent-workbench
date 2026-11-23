@@ -384,3 +384,45 @@ test('Tier2:POST /api/tasks 持久化 origin(source=research,quote 截断);非�
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+// ---------- Tier2-④:按场景周报(纯聚合层离线测试,fixtures 注入) ----------
+test('Tier2:collectWeeklyFacts projectDir 过滤会话/任务/日报;全局口径不受影响', () => {
+  const weekly = require('../lib/weekly');
+  const NOW = Date.parse('2026-11-23T04:00:00.000Z');
+  const inWindow = (h) => new Date(NOW - h * 3600000).toISOString();
+  const ctx = { config: { agentActivity: { sources: {} } } };
+  const fakeTranscript = (ref) => ({ degraded: false, messages: [{ role: 'user', text: '场景会话指令' }, { role: 'assistant', text: '完成了' }] });
+  const listSessions = (agent, cursor) => ({
+    items: agent === 'zcode' ? [
+      { ref: 'r-alpha', title: '场景A会话', projectId: 'E:/demo/alpha', state: 'idle', lastActiveAt: inWindow(2) },
+      { ref: 'r-beta', title: '场景B会话', projectId: 'E:/demo/beta', state: 'idle', lastActiveAt: inWindow(3) },
+    ] : [],
+    nextCursor: null,
+  });
+  const store = require('../lib/store');
+  const origLoadTasks = store.loadTasks;
+  store.loadTasks = (c) => ({ columns: [], tasks: [
+    { id: 't-a', title: '场景A任务', status: 'done', projectDir: 'E:/demo/alpha', completedAt: inWindow(1), artifacts: [], createdAt: inWindow(30), updatedAt: inWindow(1) },
+    { id: 't-b', title: '场景B任务', status: 'doing', projectDir: 'E:/demo/beta', artifacts: [], createdAt: inWindow(30), updatedAt: inWindow(2) },
+  ] });
+  const origLoadActs = store.loadActivities;
+  store.loadActivities = () => [];
+  const diaryMod = require('../lib/diary');
+  const origDiaries = diaryMod.loadDiaries;
+  diaryMod.loadDiaries = () => [{ taskId: 't-a', date: '2026-11-23', content: 'A 场景日报', updatedAt: inWindow(1) }, { taskId: 't-b', date: '2026-11-23', content: 'B 场景日报', updatedAt: inWindow(2) }];
+  try {
+    const all = weekly.collectWeeklyFacts(ctx, { now: NOW, days: 7, listSessions, getTranscript: fakeTranscript });
+    assert.strictEqual(all.sessions.length, 2, '全局口径两会话都在');
+    const sceneA = weekly.collectWeeklyFacts(ctx, { now: NOW, days: 7, projectDir: 'E:/demo/alpha', listSessions, getTranscript: fakeTranscript });
+    assert.strictEqual(sceneA.sessions.length, 1, '场景口径只留 A 会话');
+    assert.strictEqual(sceneA.sessions[0].title, '场景A会话');
+    assert.strictEqual(sceneA.tasksDone.length, 1, '场景 A done=1');
+    assert.strictEqual(sceneA.tasksDoing.length, 0, '场景 A doing=0');
+    assert.strictEqual(sceneA.diaries.length, 1, '场景 A 日报=1');
+    assert.strictEqual(sceneA.stats.commitsTotal, 0, 'Gitea 动态场景口径不计入(宁缺毋错)');
+  } finally {
+    store.loadTasks = origLoadTasks;
+    store.loadActivities = origLoadActs;
+    diaryMod.loadDiaries = origDiaries;
+  }
+});
