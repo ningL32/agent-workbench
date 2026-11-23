@@ -286,3 +286,40 @@ test('Tier1:KB 冷启动导入幂等;digest 聚合确定性;health 状态口径'
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+// ---------- Tier2-①:验收材料自动打包 ----------
+test('Tier2:验收包聚合日报/成果/事件+净效果;未知任务 404;启发式归因不进材料', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const store = require('../lib/store');
+  const acceptance = require('../lib/research/acceptance');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-acc-'));
+  const ctx = { dataDir, tasksPath: path.join(dataDir, 'tasks.json'), diaryPath: path.join(dataDir, 'diary.json'), taskEventsPath: path.join(dataDir, 'task_events.json'), activitiesPath: path.join(dataDir, 'activities.json'), config: {} };
+  try {
+    const tasksData = store.loadTasks(ctx);
+    tasksData.tasks.push({ id: 't-acc1', title: '报表开发|防转义', status: 'done', priority: 'high', memberId: '李雷', acceptorId: '韩梅梅', completedAt: '2026-11-23T01:00:00Z', projectDir: 'E:/demo/alpha', desc: '实现按月导出', artifacts: [{ kind: 'commit', url: 'https://git.example.com/x/commit/abc', title: 'feat: 导出' }], createdAt: '2026-11-22T01:00:00Z', updatedAt: '2026-11-23T01:00:00Z' });
+    store.saveTasks(ctx, tasksData);
+    fs.writeFileSync(path.join(dataDir, 'diary.json'), JSON.stringify([{ taskId: 't-acc1', date: '2026-11-22', content: '完成导出功能' }]));
+    const ev = require('../lib/taskEvents');
+    ev.appendEvents(ctx, [ev.createdEvent({ id: 't-acc1', title: '报表开发|防转义' }, '2026-11-22T01:00:00Z')]);
+
+    const pack = acceptance.buildAcceptancePack(ctx, 't-acc1');
+    assert.strictEqual(pack.task.acceptorId, '韩梅梅', '任务摘要');
+    assert.strictEqual(pack.diaries.length, 1, '人工日报并入');
+    assert.strictEqual(pack.artifacts.length, 1, '挂接成果并入');
+    assert.ok(pack.events.length >= 1, '事件时间轴');
+    assert.ok(pack.markdown.includes('验收材料 · 报表开发\\|防转义'), '标题转义(表格安全,mdEsc \\| 字面)');
+    assert.ok(pack.markdown.includes('feat: 导出'), '成果入材料');
+    assert.ok(pack.markdown.includes('2026-11-22:完成导出功能'), '日报入材料');
+    assert.ok(!pack.markdown.includes('activities'), '启发式归因源不出现(决议⑦从严)');
+    try {
+      acceptance.buildAcceptancePack(ctx, 't-none');
+      assert.fail('未知任务应 404');
+    } catch (e) {
+      assert.strictEqual(e.code, 'TASK_NOT_FOUND');
+    }
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
