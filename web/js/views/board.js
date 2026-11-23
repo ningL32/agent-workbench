@@ -219,9 +219,15 @@ function descTitle(t) {
 
 // P2-1 origin 溯源徽标：任务来自雷达确认入库时显示小雷达图标，hover 看「任务为什么而来」
 // （title = 原文引用前 80 字，浏览器原生 tooltip）
+// v2.9.78 调研来源徽标：origin.source==='research' 时用 book-open 图标 + 访谈场景深链
 function originBadge(t) {
   if (!t || !t.origin) return '';
   const q = String(t.origin.quote || '');
+  if (t.origin.source === 'research') {
+    const iv = String(t.origin.interviewId || '');
+    const deep = iv ? `#/research` : '#/research';
+    return `<a class="badge b-pr origin-tag" href="${deep}" title="来自调研访谈:${esc(q.slice(0, 80))}" style="text-decoration:none">${icon('book-open')}</a>`;
+  }
   return `<span class="badge b-pr origin-tag" title="${esc(q.slice(0, 80))}">${icon('radar')}</span>`;
 }
 

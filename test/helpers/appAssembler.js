@@ -215,6 +215,15 @@ function registerTaskRoutes(router, ctx) {
       dueDate: nullableDueDate(body.dueDate), // v1.4：截止时间（YYYY-MM-DD 或 null）
       priority: normalizePriority(body.priority), // v1.4：优先级（缺省 medium）
       artifacts: [], // v1.9（Q3-L1）：Gitea 成果手动挂接；存量任务无字段容错（读写两端均容忍缺失）
+      // v2.9.78 调研来源溯源（SPEC-RESEARCH 闭环 A）：{source:'research',interviewId,quote}——
+      // 形状守卫:非对象丢弃,quote ≤200;与 P2-1 雷达 origin 徽标同构
+      origin: (body && typeof body.origin === 'object' && body.origin !== null)
+        ? {
+            source: body.origin.source === 'research' ? 'research' : 'manual',
+            interviewId: typeof body.origin.interviewId === 'string' ? body.origin.interviewId.slice(0, 64) : undefined,
+            quote: typeof body.origin.quote === 'string' ? body.origin.quote.slice(0, 200) : undefined,
+          }
+        : undefined,
       // v1.7：完成日期——创建即落在内置 done 列时记当前时间，否则 null
       completedAt: status === 'done' ? now : null,
       createdAt: now,

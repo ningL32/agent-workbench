@@ -323,3 +323,64 @@ test('Tier2:验收包聚合日报/成果/事件+净效果;未知任务 404;启�
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+// ---------- Tier2-②:客户只读进度页 ----------
+test('Tier2:进度页自包含 HTML,只含人工确认面,场景过滤与百分比', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const store = require('../lib/store');
+  const progress = require('../lib/research/progress');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-prog-'));
+  const ctx = { dataDir, tasksPath: path.join(dataDir, 'tasks.json'), diaryPath: path.join(dataDir, 'diary.json') };
+  try {
+    const tasksData = store.loadTasks(ctx);
+    tasksData.tasks.push(
+      { id: 't-p1', title: '已完成任务<&>', status: 'done', projectDir: 'E:/demo/alpha', memberId: '李雷', acceptorId: '韩梅梅', completedAt: '2026-11-23T01:00:00Z', artifacts: [], createdAt: '2026-11-22T01:00:00Z', updatedAt: '2026-11-22T01:00:00Z' },
+      { id: 't-p2', title: '进行中任务', status: 'doing', projectDir: 'E:/demo/alpha', memberId: '李雷', artifacts: [], createdAt: '2026-11-22T02:00:00Z', updatedAt: '2026-11-22T02:00:00Z' },
+      { id: 't-px', title: '别的场景', status: 'todo', projectDir: 'E:/demo/beta', artifacts: [], createdAt: '2026-11-22T03:00:00Z', updatedAt: '2026-11-22T03:00:00Z' },
+    );
+    store.saveTasks(ctx, tasksData);
+    fs.writeFileSync(path.join(dataDir, 'diary.json'), JSON.stringify([{ taskId: 't-p1', date: '2026-11-22', content: '验收演示记录' }]));
+    const html = progress.renderProgressPage(ctx, 'E:/demo/alpha');
+    assert.ok(html.includes('<!DOCTYPE html>'), '自包含 HTML');
+    assert.ok(html.includes('已完成任务&lt;&amp;&gt;'), '标题 esc 生效');
+    assert.ok(!html.includes('已完成任务<&>'), '原始特殊字符不出现');
+    assert.ok(html.includes('width:50%'), '完成 1/2 → 50%');
+    assert.ok(!html.includes('别的场景'), '场景过滤');
+    assert.ok(html.includes('验收演示记录'), '人工日报入页');
+    assert.ok(!html.includes('token') && !html.includes('Authorization'), '无凭据字面量');
+    // 路由级
+    const { buildApp } = require('./helpers/appAssembler');
+    const app = buildApp({ poller: 'manual', dataDir, configPath: path.join(dataDir, 'config.json'), configDir: dataDir });
+    const res = await app.fetch('GET', '/api/research/scene-progress?scene=E%3A%2Fdemo%2Falpha', {});
+    assert.strictEqual(res.status, 200);
+    assert.ok(String(res.text).includes('项目进度'), '路由级可取(非 JSON 在 text)');
+    app.close();
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+// ---------- Tier2-③:research origin 徽标数据链 ----------
+test('Tier2:POST /api/tasks 持久化 origin(source=research,quote 截断);非对象丢弃', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-origin-'));
+  const app = buildApp({ poller: 'manual', dataDir, configPath: path.join(dataDir, 'config.json'), configDir: dataDir });
+  const api = (method, p, body) => app.fetch(method, p, { headers: body === undefined ? undefined : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+  try {
+    const ok = await api('POST', '/api/tasks', { title: '调研来源任务', origin: { source: 'research', interviewId: 'res_x', quote: '原句'.repeat(150) } });
+    assert.strictEqual(ok.status, 201);
+    assert.strictEqual(ok.body.origin.source, 'research');
+    assert.strictEqual(ok.body.origin.interviewId, 'res_x');
+    assert.ok(ok.body.origin.quote.length <= 200, 'quote 截断 ≤200');
+    const noO = await api('POST', '/api/tasks', { title: '无 origin', origin: 'not-an-object' });
+    assert.strictEqual(noO.status, 201);
+    assert.strictEqual(noO.body.origin, undefined, '非对象 origin 丢弃');
+  } finally {
+    app.close();
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});

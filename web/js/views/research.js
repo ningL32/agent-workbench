@@ -194,7 +194,7 @@ function wireMain(opts = {}) {
       };
       try {
         const dr = await apiPost(`/api/research/drafts/${b.dataset.id}/accept`, { payload, decidedBy: 'fde' });
-        const task = await apiPost('/api/tasks', { title: dr.payload.title, desc: dr.payload.desc, priority: dr.payload.priority, projectDir: (state.detail.interview.projectDir || '') });
+        const task = await apiPost('/api/tasks', { title: dr.payload.title, desc: dr.payload.desc, priority: dr.payload.priority, projectDir: (state.detail.interview.projectDir || ''), origin: { source: 'research', interviewId: state.detail.interview.id, quote: dr.quote } });
         await apiPost(`/api/research/drafts/${b.dataset.id}/link`, { taskId: task.id });
         toast(`任务 ${task.id} 已创建并挂接(闭环 A ✓)`);
         await openDetail(state.selectedId, { silent: true });
