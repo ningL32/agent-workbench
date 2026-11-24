@@ -739,18 +739,18 @@ test('v2.9.4 项目绑定：POST/PATCH projectDir、绑定与解绑进时间轴�
   assert.strictEqual(c.body.projectDir, null, '缺省 projectDir=null');
 
   // Act 1：POST 直接带 projectDir
-  const d = await api('POST', '/api/tasks', { title: '带绑定任务', projectDir: 'E:\\agent开发\\FdeHarness' });
+  const d = await api('POST', '/api/tasks', { title: '带绑定任务', projectDir: 'D:\\workspace\\project-a' });
   assert.strictEqual(d.status, 201);
-  assert.strictEqual(d.body.projectDir, 'E:\\agent开发\\FdeHarness');
+  assert.strictEqual(d.body.projectDir, 'D:\\workspace\\project-a');
 
   // Act 2：PATCH 绑定 → 详情含 projectDir + bind 事件（detail 带路径）
-  const p = await api('PATCH', `/api/tasks/${c.body.id}`, { projectDir: 'E:/agent开发/FilesAdmin' });
+  const p = await api('PATCH', `/api/tasks/${c.body.id}`, { projectDir: 'D:/workspace/project-b' });
   assert.strictEqual(p.status, 200);
-  assert.strictEqual(p.body.projectDir, 'E:/agent开发/FilesAdmin');
+  assert.strictEqual(p.body.projectDir, 'D:/workspace/project-b');
   const det = await api('GET', `/api/tasks/${c.body.id}`);
   const bindEv = (det.body.events || []).find((e) => e.type === 'bind');
   assert.ok(bindEv, '绑定应产生 bind 事件');
-  assert.ok(String(bindEv.detail).includes('FilesAdmin'), 'bind 事件 detail 带项目路径');
+  assert.ok(String(bindEv.detail).includes('project-b'), 'bind 事件 detail 带项目路径');
 
   // Act 3：PATCH null 解绑 → projectDir 回 null + 解绑事件
   const u = await api('PATCH', `/api/tasks/${c.body.id}`, { projectDir: null });

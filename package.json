@@ -1,6 +1,6 @@
 {
   "name": "fde-console",
-  "version": "2.9.80",
+  "version": "2.9.81",
   "description": "Super Workbench (fde-console) — local-first workbench plugin for DeepSeek Harness (DSH): turns your local AI coding agents into an observable, accountable team. Zero runtime dependencies; data stays on your machine.",
   "license": "MIT",
   "icon": "./assets/icon.svg",

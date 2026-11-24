@@ -605,14 +605,14 @@ test('列表：limit 缺省 20、超上限按 maxLimit 钳制、键集游标翻�
 });
 
 test('列表：project 过滤只出该项目（v2.9.3 钻取防跨项目串组），过滤态游标翻页不串组', () => {
-  // 造 4 条 zcode 会话：2 条在 FdeHarness、1 条在 FilesAdmin、1 条无目录（未知项目组）
+  // 造 4 条 zcode 会话：2 条在 project-a、1 条在 project-b、1 条无目录（未知项目组）
   const zroot3 = mk(path.join(tmpRoot, 'zcode-proj', 'cli'));
   createZcodeDb(
     path.join(zroot3, 'db', 'db.sqlite'),
     [
-      { id: `sess_${UUID1.replace('11111111', '20000001')}`, directory: 'E:\\agent开发\\FdeHarness', title: 'FdeHarness 会话A', tc: NOW - 1 * MIN, tu: NOW - 1 * MIN, messages: [] },
-      { id: `sess_${UUID1.replace('11111111', '20000002')}`, directory: 'E:\\agent开发\\FdeHarness', title: 'FdeHarness 会话B', tc: NOW - 2 * MIN, tu: NOW - 2 * MIN, messages: [] },
-      { id: `sess_${UUID1.replace('11111111', '20000003')}`, directory: 'E:\\agent开发\\FilesAdmin', title: '别的项目会话', tc: NOW - 3 * MIN, tu: NOW - 3 * MIN, messages: [] },
+      { id: `sess_${UUID1.replace('11111111', '20000001')}`, directory: 'D:\\workspace\\project-a', title: 'FdeHarness 会话A', tc: NOW - 1 * MIN, tu: NOW - 1 * MIN, messages: [] },
+      { id: `sess_${UUID1.replace('11111111', '20000002')}`, directory: 'D:\\workspace\\project-a', title: 'FdeHarness 会话B', tc: NOW - 2 * MIN, tu: NOW - 2 * MIN, messages: [] },
+      { id: `sess_${UUID1.replace('11111111', '20000003')}`, directory: 'D:\\workspace\\project-b', title: '别的项目会话', tc: NOW - 3 * MIN, tu: NOW - 3 * MIN, messages: [] },
       { id: `sess_${UUID1.replace('11111111', '20000004')}`, directory: '', title: '未知项目会话', tc: NOW - 4 * MIN, tu: NOW - 4 * MIN, messages: [] },
     ]
   );
@@ -623,18 +623,18 @@ test('列表：project 过滤只出该项目（v2.9.3 钻取防跨项目串组�
   assert.equal(all.items.length, 4);
 
   // 指定项目 → 只出该项目（正斜杠/大小写/尾分隔符归一化同组）
-  const scoped = listAgentSessions(cfg, { agent: 'zcode', project: 'e:/agent开发/FdeHarness/', now: NOW });
+  const scoped = listAgentSessions(cfg, { agent: 'zcode', project: 'd:/workspace/project-a/', now: NOW });
   assert.deepEqual(scoped.items.map((i) => i.title), ['FdeHarness 会话A', 'FdeHarness 会话B']);
-  assert.ok(scoped.items.every((i) => i.projectId === 'E:\\agent开发\\FdeHarness'), '不得混入其他项目');
+  assert.ok(scoped.items.every((i) => i.projectId === 'D:\\workspace\\project-a'), '不得混入其他项目');
 
   // project= 空串 → 只出未知项目组
   const unknown = listAgentSessions(cfg, { agent: 'zcode', project: '', now: NOW });
   assert.deepEqual(unknown.items.map((i) => i.title), ['未知项目会话']);
 
   // 过滤态游标翻页：limit=1 逐页拉，不重不漏、不串组
-  const p1 = listAgentSessions(cfg, { agent: 'zcode', project: 'E:\\agent开发\\FdeHarness', limit: 1, now: NOW });
+  const p1 = listAgentSessions(cfg, { agent: 'zcode', project: 'D:\\workspace\\project-a', limit: 1, now: NOW });
   assert.deepEqual(p1.items.map((i) => i.title), ['FdeHarness 会话A']);
-  const p2 = listAgentSessions(cfg, { agent: 'zcode', project: 'E:\\agent开发\\FdeHarness', limit: 1, cursor: p1.nextCursor, now: NOW });
+  const p2 = listAgentSessions(cfg, { agent: 'zcode', project: 'D:\\workspace\\project-a', limit: 1, cursor: p1.nextCursor, now: NOW });
   assert.deepEqual(p2.items.map((i) => i.title), ['FdeHarness 会话B']);
   assert.equal(p2.nextCursor, null, '过滤集翻尽');
 });

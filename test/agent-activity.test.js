@@ -64,7 +64,7 @@ test.before(() => {
 // ---------- 工具函数 ----------
 
 test('decodeProjectDirName：dsh 实测编码（~XXXX~ 码点 + 盘符）与兜底', () => {
-  assert.equal(decodeProjectDirName('--E-agent~5F00~53D1-FdeHarness--'), `E:\\agent开发\\FdeHarness`);
+  assert.equal(decodeProjectDirName('--D-~5DE5~4F5C~533A-demoproject--'), `D:\\工作区\\demoproject`);
   assert.equal(
     decodeProjectDirName('--C-Users-Administrator-AppData-Local-Temp--'),
     `C:\\Users\\Administrator\\AppData\\Local\\Temp`

@@ -50,8 +50,8 @@
       "dueDate": "2026-10-13",
       "desc": "对接企业 IdP 的 SAML 元数据配置，完成单点登录跳转\n验收标准：测试账号免密登录成功，登出后会话立即失效",
       "agentId": "claude",
-      "memberId": "qianqi",
-      "acceptorId": "qianqi",
+      "memberId": "lisi",
+      "acceptorId": "lisi",
       "repo": "example-org/fde-api",
       "branch": "feat/sso",
       "prUrl": "https://gitea.example.com/example-org/fde-api/pulls/12",
@@ -77,8 +77,8 @@
         {
           "type": "assign",
           "from": null,
-          "to": "张伟",
-          "detail": "负责成员：张伟",
+          "to": "李四",
+          "detail": "负责成员：李四",
           "at": "2026-10-16T01:06:00Z"
         },
         {
@@ -123,8 +123,8 @@
         {
           "type": "accept",
           "from": null,
-          "to": "张伟",
-          "detail": "验收人：张伟",
+          "to": "李四",
+          "detail": "验收人：李四",
           "at": "2026-10-16T07:45:00Z"
         }
       ],
@@ -258,7 +258,7 @@
       "dueDate": "2026-10-18",
       "desc": "梳理 9 个内置 CLI 的命令模板差异，统一 {briefing} 占位约定，并补齐 Windows 路径转义与引号规则的差异说明文档和回归用例\n验收标准：SPEC 增补对应章节，全部既有用例通过",
       "agentId": "kilo",
-      "acceptorId": "qianqi",
+      "acceptorId": "lisi",
       "repo": "example-org/fde-harness",
       "branch": "feat/agent-registry",
       "prUrl": null,
@@ -290,8 +290,8 @@
         {
           "type": "accept",
           "from": null,
-          "to": "张伟",
-          "detail": "验收人：张伟",
+          "to": "李四",
+          "detail": "验收人：李四",
           "at": "2026-10-16T05:45:00Z"
         }
       ]
@@ -815,7 +815,7 @@
     {
       "id": "a-74",
       "type": "commit_pushed",
-      "actor": "qianqi",
+      "actor": "lisi",
       "repo": "example-org/demo-hub",
       "branch": "main",
       "title": "docs: 派单模板补充验收人字段说明",
@@ -829,7 +829,7 @@
     {
       "id": "a-73",
       "type": "commit_pushed",
-      "actor": "qianqi",
+      "actor": "lisi",
       "repo": "example-org/demo-hub",
       "branch": "main",
       "title": "fix: 修复周报脚本时区偏移",
@@ -885,7 +885,7 @@
     {
       "id": "a-69",
       "type": "commit_pushed",
-      "actor": "qianqi",
+      "actor": "lisi",
       "repo": "example-org/demo-hub",
       "branch": "main",
       "title": "docs: 更新周报模板与派单说明",
@@ -970,12 +970,12 @@
       }
     },
     {
-      "id": "qianqi",
-      "name": "张伟",
+      "id": "lisi",
+      "name": "李四",
       "kind": "human",
       "role": "后端",
       "manual": false,
-      "giteaLogin": "qianqi",
+      "giteaLogin": "lisi",
       "status": "working",
       "currentTask": {
         "id": "t-m4ek9a-3f21",
@@ -1069,7 +1069,7 @@
       {
         "agent": "zcode",
         "agentName": "ZCode",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "title": "智能体动态面板：活动流渲染、来源健康徽标与 30s 轮询合并",
         "preview": "读取 web/js/views/agents.js（754 行）定位面板插入点，新增活动流列表与来源徽标条；preview 走两行截断、title 悬浮全文；轮询并入既有 10s 会话 tick 做 30s 节流，避免双定时器漂移；顺手核对 esc() 转义对 projectId 反斜杠的覆盖，截图存 %TEMP%\\agent-act\\ 待验收。",
         "startedAgoSec": 5400,
@@ -1079,7 +1079,7 @@
       {
         "agent": "zcode",
         "agentName": "ZCode",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "title": "回归修复：任务拓扑面板树视图列名显示",
         "preview": "拓扑树视图在自定义列改名后仍显示内置中文名，定位到 columns 缓存未随 PATCH 刷新；补一行 syncTopology 触发并回归七视图。",
         "startedAgoSec": 10800,
@@ -1561,7 +1561,7 @@
       "title": "配置生产日报 skill 定时任务",
       "desc": "每天早上八点前自动跑完生产日报",
       "priority": "high",
-      "suggestedMemberId": "qianqi",
+      "suggestedMemberId": "lisi",
       "matchSource": "alias",
       "dueHint": "每天早上八点前",
       "confidence": 0.92,
@@ -1650,7 +1650,7 @@
       "title": "整理 SSO 评审遗留问题清单",
       "desc": "把评审会遗留的三个问题整理成清单并逐项跟进",
       "priority": "medium",
-      "suggestedMemberId": "qianqi",
+      "suggestedMemberId": "lisi",
       "matchSource": "gitea",
       "dueHint": "本周五前",
       "confidence": 0.78,
@@ -1763,7 +1763,7 @@
       {
         "id": "zc-act1",
         "title": "智能体动态面板：活动流渲染、来源健康徽标与 30s 轮询合并",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "startedAgoSec": 5400,
         "lastActiveAgoSec": 75,
         "state": "active"
@@ -1771,7 +1771,7 @@
       {
         "id": "zc-long",
         "title": "指挥台联调长转录样例：阅读器懒渲染回归（855 条）",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "startedAgoSec": 200000,
         "lastActiveAgoSec": 4200,
         "state": "completed"
@@ -1787,7 +1787,7 @@
       {
         "id": "zc-fix",
         "title": "修复会话存活 PID 复用误报：复现步骤与回归补齐",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "startedAgoSec": 72000,
         "lastActiveAgoSec": 900,
         "state": "active",
@@ -1796,7 +1796,7 @@
       {
         "id": "zc-cache",
         "title": "Gitea 动态流轮询缓存：ETag 条件请求与退避策略落地",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "startedAgoSec": 18000,
         "lastActiveAgoSec": 300,
         "state": "active",
@@ -1805,7 +1805,7 @@
       {
         "id": "t-m4ekb2-8c07",
         "title": "PID 复用误报排查（会话 id 即任务 id 形态，ref 解码对齐）",
-        "projectId": "E:\\agent开发\\FdeHarness",
+        "projectId": "D:\\workspace\\demo-project",
         "startedAgoSec": 200000,
         "lastActiveAgoSec": 66000,
         "state": "completed"

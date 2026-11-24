@@ -216,8 +216,8 @@ WP1 唯一串行前置；WP2/3/4/5 四线并行；WP6 收口。与存量测试�
 8. ROOT/node_modules/@deepseek-ai/cordis-plugin-timer/lib/index.js L9-22,48；dsh-base/cordis.patch.yml L15-19 —— ctx.interval/timer 服务行
 9. ROOT/node_modules/@deepseek-ai/dsh-client-connection/lib/index.js L2-4 —— dsh-host-apiproxy 的 toFetchHandler/clientRequestSchema
 10. ROOT/node_modules/@deepseek-ai/dsh-cordis-host-runner/lib/index.js L581-634 —— 沙箱 ctx 暴露面
-11. E:\agent开发\FdeHarness\lib\store.js L70,L126-139,L186 —— dataDir 配置化/原子写/键校验
-12. E:\agent开发\FdeHarness\server.js L1-20；lib\router.js L1-12；web\js\app.js L58,104 —— 现状传输层与 hash 路由
+11. <repo>\\lib\store.js L70,L126-139,L186 —— dataDir 配置化/原子写/键校验
+12. <repo>\\server.js L1-20；lib\router.js L1-12；web\js\app.js L58,104 —— 现状传输层与 hash 路由
 
 ## 附录 B：实现期风险与探针方案（预检未覆盖项，WP1 已一次跑完；详录见附录 C）
 
@@ -232,12 +232,12 @@ WP1 唯一串行前置；WP2/3/4/5 四线并行；WP6 收口。与存量测试�
 | P7 | DSH_HOME 实路径与环境变量名 | 读 dsh-home-paths/lib/index.js（本轮未读）；WP1 打印 | env 名=`DSH_HOME`（未设→默认 `~/.dsh`）；本机实路径=`C:\Users\<you>\.dsh`（profile 实测落于其下）；`DSH_WEB_URL` 不在进程 env（shellEnv 注给子 shell）；canonical URL 以 `dsh web: http://127.0.0.1:<port>` 打印为准 |
 | P8 | 会话/身份服务可否被插件获取（驾驶舱身份绑定） | WP1 枚举 ctx 可见服务；不可得则 v1 维持本机单用户假设 | 会话面可达：`sessions`/`sessionQuery`/`sessionPersistence`；**身份/登录服务不存在**（user/identity/auth/anonymousUserId/credentials 全不可达）→ **v1 本机单用户假设成立** |
 
-**WP1 验收（2.7 表）实测**：`dsh --profile fde-dev --port 38080` 起服后 `curl http://127.0.0.1:38080/fde-api/ping` → `{"pong":true,...}`（心跳计数每 10s 递增）；侧栏入口实测渲染（截图 `E:\agent开发\fde-plugin-spike\fde-sidebar.png`，条目 "FDE #N pid …" 实时轮询 ping）。产物目录：`E:\agent开发\fde-plugin-spike\`（bundle 源 `fde-console/`、探针证据 probe1/probe2.json、运行日志、cdp-shot.mjs）。
+**WP1 验收（2.7 表）实测**：`dsh --profile fde-dev --port 38080` 起服后 `curl http://127.0.0.1:38080/fde-api/ping` → `{"pong":true,...}`（心跳计数每 10s 递增）；侧栏入口实测渲染（截图 `<spike>\fde-sidebar.png`，条目 "FDE #N pid …" 实时轮询 ping）。产物目录：`<spike>\`（bundle 源 `fde-console/`、探针证据 probe1/probe2.json、运行日志、cdp-shot.mjs）。
 
 ## 附录 C：WP1 探针实测详录（2026-10-19，DSH rc.7，profile=fde-dev）
 
-- 载体：`E:\agent开发\fde-plugin-spike\fde-console\`（package.json 声明 `dsh.bundle.patch` + `dsh.client`；cordis.patch.yml 单行 insert `- id: fde-console, name: fde-console-spike`；index.js 宿主探针；client.js 手写浏览器 bundle）
-- 安装：`dsh plugin --profile fde-dev add "E:\agent开发\fde-plugin-spike\fde-console"` → 自动 init + pnpm link + reconcile 回写 bundles；手工把 `@deepseek-ai/dsh-web-app` 补进 profile package.json 的 `dsh.profile.bundles`（in-box 包不在 registry，模板机制同款做法）
+- 载体：`<spike>\fde-console\`（package.json 声明 `dsh.bundle.patch` + `dsh.client`；cordis.patch.yml 单行 insert `- id: fde-console, name: fde-console-spike`；index.js 宿主探针；client.js 手写浏览器 bundle）
+- 安装：`dsh plugin --profile fde-dev add "<spike>\fde-console"` → 自动 init + pnpm link + reconcile 回写 bundles；手工把 `@deepseek-ai/dsh-web-app` 补进 profile package.json 的 `dsh.profile.bundles`（in-box 包不在 registry，模板机制同款做法）
 - 启动：`dsh --profile fde-dev --port 38080` → 日志打印 `[fde-console] P7 DSH_HOME=null ... pid=<pid>` + `dsh web: http://127.0.0.1:38080`
 - 证据文件：`probe1.json`/`probe2.json`（/fde-api/probe 快照）、`dsh-web-run.log`、`fde-sidebar.png`（浏览器截图）、`cdp-shot.mjs`（零依赖 CDP 驱动）、心跳日志（tmpdir，探针后已清）
 

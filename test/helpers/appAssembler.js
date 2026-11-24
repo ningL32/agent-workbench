@@ -597,11 +597,22 @@ function setupPoller(ctx, mode) {
   let timer = null;
   let polling = false;
 
+  // Gitea 源开关（issue #1）：pollIntervalSec<=0 = 关闭 Gitea 轮询——两种 poller 模式同语义。
+  // 只关 Gitea 源那一段（活动流 + 成员缓存）；tick 的其余职责（日报自动档/IM 摘要/自动备份/
+  // 已启用的 GitHub、Gitee 源）不受影响——没有 Gitea 的实例也要靠 tick 跑日报与备份。
+  function giteaPollingEnabled() {
+    const sec = Number((ctx.config.gitea || {}).pollIntervalSec);
+    return Number.isFinite(sec) && sec > 0;
+  }
+
   async function pollOnce() {
     if (polling) return; // 单飞
     polling = true;
     try {
-      await giteaClient.pollActivities(ctx.config);
+      if (giteaPollingEnabled()) {
+        await giteaClient.pollActivities(ctx.config);
+        await refreshMembersCache(ctx, giteaClient, ssrf);
+      }
       // v2.9.6 日报自动档：守卫在 maybeAutoDaily 内（今日已有/未到 08:00/失败 1h 内均跳过），
       // 引擎调用失败只记日志，绝不影响 Gitea 源与成员缓存
       if (weeklyMod && typeof weeklyMod.maybeAutoDaily === 'function') {
@@ -630,7 +641,6 @@ function setupPoller(ctx, mode) {
           console.error('[poller] gitee 源拉取失败（不拖垮其他源）:', (err && err.message) || String(err));
         }
       }
-      await refreshMembersCache(ctx, giteaClient, ssrf);
       // v2.9.39 IM 每日摘要：到点/已发/次数用尽都在 maybeRunDigest 内部短路，失败只记日志
       try {
         const r = require('../../lib/imNotify.js').maybeRunDigest(ctx);
@@ -667,9 +677,10 @@ function setupPoller(ctx, mode) {
       clearInterval(timer);
       timer = null;
     }
+    // 独立版历史语义不变：pollIntervalSec>0 才起定时器（按该值走）；<=0 定时器不启动。
     const sec = Number(intervalSec);
     if (!Number.isFinite(sec) || sec <= 0) {
-      console.warn('[poller] pollIntervalSec 非法，轮询器停止');
+      console.log('[poller] pollIntervalSec<=0，独立版轮询器未启动（可经 PATCH /api/settings 开启）');
       return;
     }
     timer = setInterval(() => {
@@ -695,6 +706,13 @@ function setupPoller(ctx, mode) {
     } else {
       console.log('[poller] pollIntervalSec<=0，轮询器未启动（可经 PATCH /api/settings 开启）');
     }
+  } else {
+    // issue #1 插件态：节拍归宿主 ctx.interval（固定 60s），绝不自建定时器（否则与宿主叠成双 tick）。
+    // pollOnce 每轮读 ctx.config 实时判定 giteaPollingEnabled()，PATCH 改值后下一 tick 自然生效；
+    // 这里挂一个只打日志的入口，让 settings PATCH 的重排调用不落空。
+    ctx.reschedulePoller = () => {
+      console.log(`[poller] Gitea 源${giteaPollingEnabled() ? '已开启' : '已关闭（pollIntervalSec<=0）'}，下一宿主 tick 生效`);
+    };
   }
   return { pollOnce, stop, reschedule };
 }

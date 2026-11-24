@@ -1,5 +1,5 @@
 // FDE 指挥台 DSH 客户端 bundle（SPEC-PLUGIN WP4）——手写零构建（零依赖纪律），
-// 形态照抄 WP1 spike（E:\agent开发\fde-plugin-spike\fde-console\client.js 实测可用）：
+// 形态沿用早期 spike 验证过的手写模块包裹（实测可用）：
 //   window.__ModuleLoader__.load({id, factory}) 包裹，导出 cordis 客户端插件 {inject, apply}。
 //
 // 集成岗搬运（client 文件落位 = 插件包内 client.js）：
