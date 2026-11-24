@@ -7,11 +7,12 @@
  * 「具体名单」的防线——名单本身不能进公开仓（等于把要藏的东西列出来）。
  *
  * 做法：只放**形态类**规则，扫 git 跟踪文件（= 发布面）。命中即红，消息里给出文件与形态。
- *   H1 本机家目录绝对路径      C:\Users\<name>、/home/<name>、/Users/<name>
- *   H2 个人工作区路径形态      非家目录的盘符路径里含 CJK 目录名（E:\某中文目录\… 这类）
- *   H3 真实邮箱                除占位域（example.com / .invalid）外的邮箱地址
- *   H4 常见凭据形态            ghp_/github_pat_/sk-/AKIA/xox[bp]-/-----BEGIN … PRIVATE KEY
- *   H5 npm 打包面不得夹带运行态配置  files 白名单不含 config.json / agents.json / members.json / data/
+ *   （下列说明刻意不用可被规则匹配的字面示例——本文件自己也在扫描范围内，写实例会自咬。）
+ *   H1 本机家目录绝对路径      Windows / Unix 家目录下带具体用户名的路径
+ *   H2 个人工作区路径形态      非家目录的盘符路径，且目录名里含中日韩文字
+ *   H3 真实邮箱地址            除占位域（example 系 / .invalid / .test）外的邮箱
+ *   H4 常见凭据形态            各家 token / API key 的固定前缀 + 足够长度，或 PEM 私钥头
+ *   H5 npm 打包面不得夹带运行态配置  files 白名单不含 config / agents / members 三个 json 与 data 目录
  *
  * 豁免两层：①明显占位名（Users/me、home/user）与占位文案行（placeholder=/示例）规则内排除；
  *          ②确需保留真实路径形态的夹具按文件登记 ALLOW，必须带理由。
