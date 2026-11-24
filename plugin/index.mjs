@@ -105,6 +105,8 @@ export function apply(ctx) {
     'fde-console: /fde static assets'
   )
   // P5/1.4 实测：ctx.interval(callback, delay) —— callback 在前，写反走 promise 分支不报错但不跑
+  // 这 60s 只是宿主节拍的下限，不是轮询间隔：pollTick 内按 gitea.pollIntervalSec 节流
+  // （实际间隔 = max(配置值, 60s)；0 = 关闭轮询器）——issue #1
   ctx.effect(() => ctx.interval(() => handlers.pollTick(), 60_000), 'fde-console: 60s poll tick')
   // 装配器收尾（停轮询器、还原注入 env、摘掉自己的实例登记）；注册在最后 = 逆序最先回收
   ctx.effect(() => () => {

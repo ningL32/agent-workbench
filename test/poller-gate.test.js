@@ -1,26 +1,21 @@
 'use strict';
 
 /**
- * poller-gate.test.js — issue #1（v2.9.81）：pollIntervalSec=0 必须关闭 Gitea 源轮询
+ * poller-gate.test.js — issue #1（v2.9.81）：插件模式尊重 gitea.pollIntervalSec，0 = 关闭轮询器
  *
- * 回归的真实场景（业主在隔离演示实例上发现）：插件模式下 config.json 写
- * `gitea.pollIntervalSec: 0`，Gitea 轮询照样每 60s 跑一次，没有 Gitea 的实例每轮把
- * `data/gitea-status.json` 覆写成 `{ok:false}`——而 settings 的注释说 0 = 关闭。
+ * 回归的真实场景（issue #1，隔离演示实例上发现）：插件模式下 config.json 写
+ * `gitea.pollIntervalSec: 0`，Gitea 轮询照样每 60s 跑一次并把 data/gitea-status.json 覆写成
+ * {ok:false}——顶栏因此恒显示「Gitea 异常」且关不掉；而 settings 的注释说 0 = 关闭轮询器。
+ * 根因：插件态 tick 由宿主 ctx.interval 固定 60s 驱动，间隔节流只存在于独立版的 reschedule。
  *
- * 根因：插件态 tick 由宿主 ctx.interval 固定驱动，pollOnce 无条件调 giteaClient.pollActivities；
- * `sec<=0` 的节流只存在于独立版 auto 模式的 reschedule 里。
+ * 修法（issue 建议的方案，保持文档契约）：两种模式对 pollIntervalSec 同语义——
+ *   >0 = 轮询器间隔（秒）；0 = 关闭轮询器（整个 pollOnce 不执行，含日报/摘要/备份等 tick 职责）。
+ *   插件态在每次宿主 tick 上按「距上次运行是否已满间隔」决定跑不跑（实际间隔 = max(配置, 宿主 60s）。
+ *   另：GET /api/overview 的 gitea 增 disabled 字段，界面据它显示中性态而不是「异常」。
  *
- * 修法语义（最小修复）：pollOnce 每轮读 ctx.config 实时判定「Gitea 源开/关」——
- *   插件态：tick 由宿主固定驱动，关闭态下跳过 Gitea 段（活动流 + 成员缓存），
- *           日报自动档/IM 摘要/自动备份/已启用的 GitHub、Gitee 源照常；PATCH 改值下一 tick 生效。
- *   独立版：0 = 轮询定时器不启动（历史语义不变）；运行中 PATCH 成 0 则定时器停。
- *
- * 判定手法：不挂 GITEA_FIXTURE、baseUrl 指向 .invalid 保留域（必然解析失败、零出网）——
- *   源开启 → pollActivities 失败 → 写 gitea-status.json {ok:false}（= issue 现象）
- *   源关闭 → 根本不调 pollActivities → 该文件不出现（零出网）
- *
- * ⏰ 时间依赖纪律：每个实例都带 DSH_FIXTURE——本地 ≥08:00 时 tick 内的日报自动档会真拉
- *    dsh 引擎子进程（不收割则测试进程挂死），fixture 让引擎路径短路。
+ * 零出网手法：Gitea baseUrl 指向白名单外主机——pollActivities 出站前的首道守卫即抛
+ * HOST_NOT_ALLOWED（不发任何请求），随后照常落 gitea-status.json {ok:false}，正好复刻 issue 里
+ * 「每次失败都覆写 {ok:false}」的现象。时钟经 buildApp({ now }) 注入，不依赖真实时间。
  */
 
 const test = require('node:test');
@@ -31,7 +26,19 @@ const path = require('node:path');
 
 const { buildApp } = require('./helpers/appAssembler');
 
-function makeApp(t, { pollIntervalSec, poller }) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** 可拨动的假时钟（轮询器的间隔判定只认它） */
+function fakeClock(start = 1700000000000) {
+  let t = start;
+  return {
+    now: () => t,
+    advance: (ms) => { t += ms; },
+    set: (ms) => { t = ms; },
+  };
+}
+
+function makeApp(t, { pollIntervalSec, poller, clock }) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-gate-'));
   t.after(() => {
     try {
@@ -47,116 +54,156 @@ function makeApp(t, { pollIntervalSec, poller }) {
       host: '127.0.0.1',
       dataDir,
       webDir: path.join(tmp, 'web'),
-      // 不可解析主机（.invalid = RFC 2606 保留域，必然解析失败、零出网）：
-      // 无 fixture、无凭据，pollActivities 一旦被调必然失败并落 {ok:false}
-      gitea: { baseUrl: 'https://gitea.invalid', org: 'gate-org', hostWhitelist: ['gitea.invalid'], pollIntervalSec },
+      gitea: {
+        baseUrl: 'https://gitea.example.com',
+        org: 'example-org',
+        // 白名单故意不含 baseUrl 的主机：守卫在出站前快速失败（零网络）
+        hostWhitelist: ['not-the-gitea-host.example.com'],
+        pollIntervalSec,
+      },
     })
   );
   const app = buildApp({
     poller,
     configPath: path.join(tmp, 'config.json'),
-    // DSH_FIXTURE 随行：日报自动档在本地 ≥08:00 会经 maybeAutoDaily 真拉 dsh 引擎子进程
+    // DSH_FIXTURE 随行作保险：本夹具的 Gitea 轮询在首行即抛错，tick 的副业不会执行；
+    // 万一执行到日报自动档，fixture 让引擎路径短路（绝不 spawn 真引擎）
     env: { DSH_FIXTURE: path.join(__dirname, 'fixtures', 'dsh-ok.txt') },
     persistentEnv: true,
+    now: clock.now,
   });
   t.after(() => app.close());
-  return { app, dataDir };
+  const statusFile = path.join(dataDir, 'gitea-status.json');
+  const exists = () => fs.existsSync(statusFile);
+  const forget = () => fs.rmSync(statusFile, { force: true });
+  const patchInterval = (sec) => app.fetch('PATCH', '/api/settings', {
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ gitea: { pollIntervalSec: sec } }),
+  });
+  return { app, dataDir, statusFile, exists, forget, patchInterval };
 }
 
-async function waitFor(file, ms) {
-  const deadline = Date.now() + ms;
-  while (Date.now() < deadline) {
-    if (fs.existsSync(file)) return true;
-    await new Promise((r) => setTimeout(r, 100));
+const HOST_TICK = 60_000; // 宿主 ctx.interval 的固定节拍（plugin/index.mjs）
+
+test('issue#1 插件态 pollIntervalSec=0：轮询器关闭——不再触碰 Gitea，状态标 disabled', async (t) => {
+  // arrange
+  const f = makeApp(t, { pollIntervalSec: 0, poller: 'manual', clock: fakeClock() });
+  // act：模拟宿主三轮 tick
+  const results = [];
+  for (let i = 0; i < 3; i++) results.push(await f.app.pollTick());
+  // assert
+  assert.deepEqual(results, ['disabled', 'disabled', 'disabled']);
+  assert.strictEqual(f.exists(), false, '关闭态不应触碰 Gitea（issue 现象是每轮覆写 {ok:false}）');
+  const ov = await f.app.fetch('GET', '/api/overview');
+  assert.strictEqual(ov.body.gitea.disabled, true, 'overview.gitea.disabled——界面据此显示中性态而非「异常」');
+});
+
+test('issue#1 插件态 pollIntervalSec=60：距上次运行不满 60s 的宿主 tick 被跳过', async (t) => {
+  // arrange
+  const clock = fakeClock();
+  const f = makeApp(t, { pollIntervalSec: 60, poller: 'manual', clock });
+  // act / assert：首个宿主 tick 即运行（与修复前一致）
+  assert.strictEqual(await f.app.pollTick(), 'ran');
+  assert.strictEqual(f.exists(), true, '运行过的证据：Gitea 守卫失败已落 gitea-status.json');
+  assert.strictEqual(JSON.parse(fs.readFileSync(f.statusFile, 'utf8')).ok, false);
+  // 紧接着的宿主 tick：未满间隔 → 跳过，且确实没有执行（删掉状态文件后不再出现）
+  f.forget();
+  clock.advance(HOST_TICK - 1);
+  assert.strictEqual(await f.app.pollTick(), 'skipped');
+  assert.strictEqual(f.exists(), false, '被跳过的 tick 不得执行 pollOnce');
+  // 满 60s → 再次运行
+  clock.advance(1);
+  assert.strictEqual(await f.app.pollTick(), 'ran');
+  assert.strictEqual(f.exists(), true);
+});
+
+test('issue#1 插件态尊重间隔数值：pollIntervalSec=300 时每 5 个宿主 tick 才运行一次', async (t) => {
+  // arrange：issue「Why it matters」第二条——副业不该无视配置的间隔每拍都触发
+  const clock = fakeClock();
+  const f = makeApp(t, { pollIntervalSec: 300, poller: 'manual', clock });
+  assert.strictEqual(await f.app.pollTick(), 'ran');
+  f.forget();
+  // act / assert
+  for (let i = 1; i <= 4; i++) {
+    clock.advance(HOST_TICK);
+    assert.strictEqual(await f.app.pollTick(), 'skipped', `第 ${i} 拍（${i * 60}s）未满 300s`);
+    assert.strictEqual(f.exists(), false, `第 ${i} 拍不得执行`);
   }
-  return fs.existsSync(file);
-}
-
-test('issue#1 插件态 pollIntervalSec=0：tick 照跑但不碰 Gitea 源（不写 gitea-status.json）', async (t) => {
-  // arrange
-  const { app, dataDir } = makeApp(t, { pollIntervalSec: 0, poller: 'manual' });
-  // act：模拟宿主连续三轮 60s tick
-  for (let i = 0; i < 3; i++) await app.pollTick();
-  await new Promise((r) => setTimeout(r, 300));
-  // assert：源关闭 = pollActivities 一次都没调 → 状态文件不出现（issue 现象是每轮覆写 {ok:false}）
-  assert.strictEqual(
-    fs.existsSync(path.join(dataDir, 'gitea-status.json')), false,
-    'pollIntervalSec=0 时不应触碰 Gitea 源（gitea-status.json 不应出现）'
-  );
+  clock.advance(HOST_TICK);
+  assert.strictEqual(await f.app.pollTick(), 'ran', '满 300s 的宿主 tick 运行');
+  assert.strictEqual(f.exists(), true);
 });
 
-test('issue#1 插件态 pollIntervalSec>0：Gitea 源照常轮询（失败才落 ok:false，行为不变）', async (t) => {
+test('issue#1 插件态 PATCH pollIntervalSec：下一宿主 tick 生效（0↔60），overview.gitea.disabled 同步翻转', async (t) => {
   // arrange
-  const { app, dataDir } = makeApp(t, { pollIntervalSec: 60, poller: 'manual' });
+  const clock = fakeClock();
+  const f = makeApp(t, { pollIntervalSec: 0, poller: 'manual', clock });
+  assert.strictEqual(await f.app.pollTick(), 'disabled');
+  // act：开启
+  assert.strictEqual((await f.patchInterval(60)).status, 200);
+  // assert
+  assert.strictEqual((await f.app.fetch('GET', '/api/overview')).body.gitea.disabled, false);
+  assert.strictEqual(await f.app.pollTick(), 'ran', 'PATCH 后下一宿主 tick 即运行');
+  f.forget();
+  clock.advance(HOST_TICK);
+  assert.strictEqual(await f.app.pollTick(), 'ran', '开启后按间隔持续运行');
+  // act：关闭
+  assert.strictEqual((await f.patchInterval(0)).status, 200);
+  // assert
+  assert.strictEqual((await f.app.fetch('GET', '/api/overview')).body.gitea.disabled, true);
+  f.forget();
+  clock.advance(3600_000); // 即使过了很久
+  assert.strictEqual(await f.app.pollTick(), 'disabled');
+  assert.strictEqual(f.exists(), false, '关闭后不再触碰 Gitea');
+});
+
+test('issue#1 关闭态下残留的旧失败状态如实带出 disabled（界面不再被染红）', async (t) => {
+  // arrange：修复前留下的失败状态——issue 里那台演示实例的现场
+  const f = makeApp(t, { pollIntervalSec: 0, poller: 'manual', clock: fakeClock() });
+  fs.mkdirSync(path.dirname(f.statusFile), { recursive: true }); // 关闭态下还没人建过 data/
+  fs.writeFileSync(
+    f.statusFile,
+    JSON.stringify({ ok: false, lastPollAt: '2026-11-22T06:00:00.000Z', lastError: 'getaddrinfo ENOTFOUND gitea' })
+  );
   // act
-  await app.pollTick();
-  // assert：源开启 → pollActivities 被调 → 不可达故失败 → 落 {ok:false}（与修复前一致，无行为变更）
-  assert.strictEqual(
-    await waitFor(path.join(dataDir, 'gitea-status.json'), 3000), true,
-    'pollIntervalSec>0 时应照常轮询 Gitea 源'
-  );
-  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dataDir, 'gitea-status.json'), 'utf8')).ok, false);
+  const ov = await f.app.fetch('GET', '/api/overview');
+  // assert：ok/lastError 如实保留（不篡改历史），只增 disabled 供界面判定
+  assert.deepStrictEqual(ov.body.gitea, {
+    ok: false,
+    lastPollAt: '2026-11-22T06:00:00.000Z',
+    lastError: 'getaddrinfo ENOTFOUND gitea',
+    disabled: true,
+  });
 });
 
-test('issue#1 插件态 PATCH pollIntervalSec 60→0：下一 tick 即关闭', async (t) => {
-  // arrange
-  const { app, dataDir } = makeApp(t, { pollIntervalSec: 0, poller: 'manual' });
-  // act：先开启 → 一轮 tick（应触碰 Gitea 源）→ PATCH 关闭 → 再两轮 tick
-  const on = await app.fetch('PATCH', '/api/settings', {
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gitea: { pollIntervalSec: 60 } }),
-  });
-  assert.strictEqual(on.status, 200);
-  await app.pollTick();
-  const touched = await waitFor(path.join(dataDir, 'gitea-status.json'), 3000);
-  assert.strictEqual(touched, true, '开启后应触碰 Gitea 源');
-
-  fs.rmSync(path.join(dataDir, 'gitea-status.json'), { force: true });
-  const off = await app.fetch('PATCH', '/api/settings', {
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gitea: { pollIntervalSec: 0 } }),
-  });
-  assert.strictEqual(off.status, 200);
-  for (let i = 0; i < 2; i++) await app.pollTick();
-  await new Promise((r) => setTimeout(r, 300));
+test('issue#1 时钟回拨不会让轮询器永久跳过', async (t) => {
+  // arrange：本机有过系统时钟跳变的先例——elapsed 为负时不能一直判「未满间隔」
+  const clock = fakeClock();
+  const f = makeApp(t, { pollIntervalSec: 60, poller: 'manual', clock });
+  assert.strictEqual(await f.app.pollTick(), 'ran');
+  // act：回拨一小时
+  clock.set(clock.now() - 3600_000);
   // assert
-  assert.strictEqual(
-    fs.existsSync(path.join(dataDir, 'gitea-status.json')), false,
-    'PATCH 为 0 后下一 tick 起不再触碰 Gitea 源'
-  );
+  assert.strictEqual(await f.app.pollTick(), 'ran', '回拨后按「从未运行」处理');
+  assert.strictEqual(await f.app.pollTick(), 'skipped', '随后恢复按间隔节流');
 });
 
-test('issue#1 独立版 auto 模式 pollIntervalSec=0：历史语义不变（定时器不启动、不碰 Gitea 源）', async (t) => {
-  // arrange：独立版 0 = 轮询定时器整个不启动（既有配置语义，本次修复不改变）
-  const { app, dataDir } = makeApp(t, { pollIntervalSec: 0, poller: 'auto' });
-  // act：若定时器误启动，500ms 内 pollOnce 至少跑一轮并触碰 Gitea 源
-  await new Promise((r) => setTimeout(r, 500));
+test('issue#1 独立版 auto 模式语义不变：0 = 定时器不启动；运行中 PATCH 成 0 = 定时器停', async (t) => {
+  // arrange (a)：0 → 不启动
+  const a = makeApp(t, { pollIntervalSec: 0, poller: 'auto', clock: fakeClock() });
+  await sleep(400);
+  assert.strictEqual(a.exists(), false, 'auto 模式 pollIntervalSec=0 不启动轮询（历史语义）');
+  // arrange (b)：1s → 运行
+  const b = makeApp(t, { pollIntervalSec: 1, poller: 'auto', clock: fakeClock() });
+  const deadline = Date.now() + 4000;
+  while (!b.exists() && Date.now() < deadline) await sleep(100);
+  assert.strictEqual(b.exists(), true, '开启态应运行轮询');
+  // act：PATCH 关闭
+  assert.strictEqual((await b.patchInterval(0)).status, 200);
+  await sleep(1500); // 让在途的一轮跑完
+  b.forget();
+  await sleep(1500); // 越过原 1s 节拍
   // assert
-  assert.strictEqual(
-    fs.existsSync(path.join(dataDir, 'gitea-status.json')), false,
-    'auto 模式 pollIntervalSec=0 不应启动轮询（历史语义）'
-  );
-  // 重排为合法正值可随时开启（PATCH 入口仍在）
-  assert.doesNotThrow(() => app.reschedulePoller(60));
-});
-
-test('issue#1 独立版 auto 模式运行中 PATCH 成 0：定时器停、不再碰 Gitea 源', async (t) => {
-  // arrange：间隔 1s 起轮询
-  const { app, dataDir } = makeApp(t, { pollIntervalSec: 1, poller: 'auto' });
-  // act：等首轮触碰（证明轮询确实在跑）→ PATCH 关闭
-  const touched = await waitFor(path.join(dataDir, 'gitea-status.json'), 4000);
-  assert.strictEqual(touched, true, '开启态应触碰 Gitea 源');
-  const off = await app.fetch('PATCH', '/api/settings', {
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gitea: { pollIntervalSec: 0 } }),
-  });
-  assert.strictEqual(off.status, 200);
-  await new Promise((r) => setTimeout(r, 1500)); // 越过原 1s 节拍
-  fs.rmSync(path.join(dataDir, 'gitea-status.json'), { force: true });
-  await new Promise((r) => setTimeout(r, 1500));
-  // assert：关闭后两个原节拍周期内文件不再出现
-  assert.strictEqual(
-    fs.existsSync(path.join(dataDir, 'gitea-status.json')), false,
-    'PATCH 为 0 后定时器应停、不再触碰 Gitea 源'
-  );
+  assert.strictEqual(b.exists(), false, 'PATCH 为 0 后定时器应停');
+  assert.strictEqual((await b.app.fetch('GET', '/api/overview')).body.gitea.disabled, true);
 });

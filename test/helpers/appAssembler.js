@@ -3,13 +3,14 @@
 /**
  * appAssembler.js — WP3 测试装配器：server.js 装配逻辑的单一真相（可注入 config 的纯装配）
  *
- * buildApp({configPath, configDir, rootDir, env, persistentEnv, poller})
+ * buildApp({configPath, configDir, rootDir, env, persistentEnv, poller, now})
  *   → { ctx, router, config, configPath, version,
  *       handle,       // 边界管线：Host 头校验(403) → Sec-Fetch-Site 校验(403) → /api/* 分发 | 其余静态
  *       handleApi,    // router.dispatch 直通（插件态 adapter 在自己防线内直委，见 plugin/adapter.js）
  *       handleStatic, // 静态托管直通（plugin/static.js）
  *       fetch,        // 进程内 mock 客户端：createMockReq/createMockRes + handle，fetch 形响应答
- *       pollTick,     // Gitea 轮询单飞 tick（插件态由宿主 ctx.interval 驱动）
+ *       pollTick,     // 轮询单飞 tick（插件态由宿主 ctx.interval 驱动；按 pollIntervalSec 节流，0 = 关闭，
+ *                      // 返回 'ran' | 'skipped' | 'disabled' 供测试断言，宿主不读返回值）
  *       close }       // 收尾：停轮询定时器、还原 persistentEnv
  *
  * 与旧 server.js 的唯一语义差异：
@@ -552,16 +553,19 @@ async function refreshMembersCache(ctx, giteaClient, ssrf) {
  * 单飞（上一轮未完成不重入）；PATCH settings 改 pollIntervalSec 后经 ctx.reschedulePoller 重排。
  * GITEA_FIXTURE 模式同样生效（fixture 模式 pollActivities 零网络）。
  * poller 模式：'auto' = 独立版行为（自起定时器 + ctx.reschedulePoller 可重排）；
- *             'manual' = 插件态（只暴露 pollTick，由宿主 ctx.interval 驱动，SPEC-PLUGIN 1.4）。
+ *             'manual' = 插件态（只暴露 pollTick，由宿主 ctx.interval 驱动，SPEC-PLUGIN 1.4；
+ *             tick 内按 pollIntervalSec 节流，0 = 关闭——issue #1）。
+ * now：时钟注入缝（测试用），缺省 Date.now。
  */
-function setupPoller(ctx, mode) {
+function setupPoller(ctx, mode, now) {
+  const nowMs = typeof now === 'function' ? now : Date.now;
   let giteaClient;
   let ssrf = null;
   try {
     giteaClient = require('../../lib/giteaClient.js');
   } catch (e) {
     console.warn('[poller] giteaClient.js 缺位，轮询器未启动');
-    return { pollOnce: async () => {}, stop() {}, reschedule() {} };
+    return { pollOnce: async () => {}, tick: async () => 'unavailable', stop() {}, reschedule() {} };
   }
   try {
     ssrf = require('../../lib/ssrfGuard.js');
@@ -591,28 +595,17 @@ function setupPoller(ctx, mode) {
   }
   if (typeof giteaClient.pollActivities !== 'function') {
     console.warn('[poller] giteaClient.pollActivities 不可用，轮询器未启动');
-    return { pollOnce: async () => {}, stop() {}, reschedule() {} };
+    return { pollOnce: async () => {}, tick: async () => 'unavailable', stop() {}, reschedule() {} };
   }
 
   let timer = null;
   let polling = false;
 
-  // Gitea 源开关（issue #1）：pollIntervalSec<=0 = 关闭 Gitea 轮询——两种 poller 模式同语义。
-  // 只关 Gitea 源那一段（活动流 + 成员缓存）；tick 的其余职责（日报自动档/IM 摘要/自动备份/
-  // 已启用的 GitHub、Gitee 源）不受影响——没有 Gitea 的实例也要靠 tick 跑日报与备份。
-  function giteaPollingEnabled() {
-    const sec = Number((ctx.config.gitea || {}).pollIntervalSec);
-    return Number.isFinite(sec) && sec > 0;
-  }
-
   async function pollOnce() {
     if (polling) return; // 单飞
     polling = true;
     try {
-      if (giteaPollingEnabled()) {
-        await giteaClient.pollActivities(ctx.config);
-        await refreshMembersCache(ctx, giteaClient, ssrf);
-      }
+      await giteaClient.pollActivities(ctx.config);
       // v2.9.6 日报自动档：守卫在 maybeAutoDaily 内（今日已有/未到 08:00/失败 1h 内均跳过），
       // 引擎调用失败只记日志，绝不影响 Gitea 源与成员缓存
       if (weeklyMod && typeof weeklyMod.maybeAutoDaily === 'function') {
@@ -641,6 +634,7 @@ function setupPoller(ctx, mode) {
           console.error('[poller] gitee 源拉取失败（不拖垮其他源）:', (err && err.message) || String(err));
         }
       }
+      await refreshMembersCache(ctx, giteaClient, ssrf);
       // v2.9.39 IM 每日摘要：到点/已发/次数用尽都在 maybeRunDigest 内部短路，失败只记日志
       try {
         const r = require('../../lib/imNotify.js').maybeRunDigest(ctx);
@@ -677,10 +671,9 @@ function setupPoller(ctx, mode) {
       clearInterval(timer);
       timer = null;
     }
-    // 独立版历史语义不变：pollIntervalSec>0 才起定时器（按该值走）；<=0 定时器不启动。
     const sec = Number(intervalSec);
     if (!Number.isFinite(sec) || sec <= 0) {
-      console.log('[poller] pollIntervalSec<=0，独立版轮询器未启动（可经 PATCH /api/settings 开启）');
+      console.warn('[poller] pollIntervalSec 非法，轮询器停止');
       return;
     }
     timer = setInterval(() => {
@@ -697,6 +690,23 @@ function setupPoller(ctx, mode) {
     }
   }
 
+  // issue #1（v2.9.81）：pollIntervalSec 两种模式同语义——>0 = 轮询器间隔（秒），0 = 关闭轮询器。
+  // 独立版由定时器保证节拍；插件态的节拍归宿主（plugin/index.mjs 的 ctx.interval，固定 60s），
+  // 这里在每次宿主 tick 上按「距上次运行是否已满配置间隔」决定跑不跑，所以插件态的实际间隔
+  // = max(配置值, 宿主 60s)。0 时整个 pollOnce 不执行（含日报自动档 / IM 摘要 / 自动备份等
+  // tick 职责，与独立版「0 = 定时器不启动」一致）。每次都读 ctx.config，
+  // PATCH /api/settings 改值后下一宿主 tick 即生效。
+  let lastRunAt = 0;
+  function tick() {
+    const sec = Number((ctx.config.gitea || {}).pollIntervalSec);
+    if (!Number.isFinite(sec) || sec <= 0) return Promise.resolve('disabled');
+    const now = nowMs();
+    if (now < lastRunAt) lastRunAt = 0; // 时钟回拨：不因负的 elapsed 永久跳过
+    if (lastRunAt && now - lastRunAt < sec * 1000) return Promise.resolve('skipped');
+    lastRunAt = now;
+    return pollOnce().then(() => 'ran');
+  }
+
   if (mode === 'auto') {
     ctx.reschedulePoller = reschedule;
     const initialSec = Number(ctx.config.gitea.pollIntervalSec);
@@ -706,15 +716,8 @@ function setupPoller(ctx, mode) {
     } else {
       console.log('[poller] pollIntervalSec<=0，轮询器未启动（可经 PATCH /api/settings 开启）');
     }
-  } else {
-    // issue #1 插件态：节拍归宿主 ctx.interval（固定 60s），绝不自建定时器（否则与宿主叠成双 tick）。
-    // pollOnce 每轮读 ctx.config 实时判定 giteaPollingEnabled()，PATCH 改值后下一 tick 自然生效；
-    // 这里挂一个只打日志的入口，让 settings PATCH 的重排调用不落空。
-    ctx.reschedulePoller = () => {
-      console.log(`[poller] Gitea 源${giteaPollingEnabled() ? '已开启' : '已关闭（pollIntervalSec<=0）'}，下一宿主 tick 生效`);
-    };
   }
-  return { pollOnce, stop, reschedule };
+  return { pollOnce, tick: mode === 'manual' ? tick : pollOnce, stop, reschedule };
 }
 
 // ---------- mock 传输层（真端口用例的进程内迁移底座） ----------
@@ -1009,7 +1012,7 @@ function buildApp(options) {
   if (envMap && opts.persistentEnv) applyEnv();
 
   const pollerMode = opts.poller === 'manual' ? 'manual' : 'auto';
-  const poller = setupPoller(ctx, pollerMode);
+  const poller = setupPoller(ctx, pollerMode, opts.now);
 
   // ---- 边界管线（与旧 server.js http 层逐行同构） ----
   function handle(req, res) {
@@ -1093,7 +1096,7 @@ function buildApp(options) {
     handleApi,
     handleStatic,
     fetch: appFetch,
-    pollTick: () => poller.pollOnce(),
+    pollTick: () => poller.tick(),
     reschedulePoller: (sec) => poller.reschedule(sec),
     close() {
       poller.stop();

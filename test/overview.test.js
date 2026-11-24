@@ -4,7 +4,8 @@
  * overview.test.js — B5 总览聚合 + 成员进度
  * 覆盖：overview 各字段汇总（任务分布/agents/activities24h/gitea 健康；
  *       v2.2 起 gatewayExternalRunning、v2.3 起 sessionsRunning 字段均随退役移除），
- *       gitea-status.json 缺失 → {"ok":false,"lastPollAt":null,"lastError":"尚未轮询"}，
+ *       gitea-status.json 缺失 → {"ok":false,"lastPollAt":null,"lastError":"尚未轮询","disabled":<轮询器是否关闭>}
+ *       （disabled 为 v2.9.81 只增字段，issue #1；本套件 config 的 pollIntervalSec=0 故为 true），
  *       members 聚合（kind/status/currentTask/session/统计）。
  * 运行：node --test test/overview.test.js
  */
@@ -71,7 +72,7 @@ test('冷启动 overview：全零 + gitea 未轮询默认值', async () => {
   assert.strictEqual(r.body.agents, 9);
   assert.strictEqual(r.body.sessionsRunning, undefined, 'v2.3：sessionsRunning 已随会话登记表退役移除');
   assert.strictEqual(r.body.activities24h, 0);
-  assert.deepStrictEqual(r.body.gitea, { ok: false, lastPollAt: null, lastError: '尚未轮询' });
+  assert.deepStrictEqual(r.body.gitea, { ok: false, lastPollAt: null, lastError: '尚未轮询', disabled: true });
 });
 
 test('建任务后 tasks 分布汇总正确', async () => {
@@ -127,7 +128,8 @@ test('gitea-status.json 存在时 overview 读取其内容（只读）', async (
     lastError: null,
   });
   const r = await api('GET', '/api/overview');
-  assert.deepStrictEqual(r.body.gitea, { ok: true, lastPollAt: '2026-10-16T08:00:00Z', lastError: null });
+  // disabled:true 是本套件 config 的 pollIntervalSec=0 所致（issue #1 只增字段；旧的成功状态如实保留）
+  assert.deepStrictEqual(r.body.gitea, { ok: true, lastPollAt: '2026-10-16T08:00:00Z', lastError: null, disabled: true });
 });
 
 test('activities.json 按数组存储可被统计（24h 内计数）', async () => {

@@ -69,6 +69,7 @@ export function openOnboarding() {
     const host = box.querySelector('#ob-scan');
     let sources = [];
     let giteaOk = null;
+    let giteaOff = false;
     try {
       const aa = await apiGet('/api/agent-activity');
       sources = Array.isArray(aa.sources) ? aa.sources : [];
@@ -76,17 +77,21 @@ export function openOnboarding() {
     try {
       const ov = await apiGet('/api/overview');
       giteaOk = !!(ov && ov.gitea && ov.gitea.ok);
+      giteaOff = !!(ov && ov.gitea && ov.gitea.disabled); // issue #1：轮询器关闭 ≠ 未连接
     } catch (e) { giteaOk = null; }
     const okCount = sources.filter((s) => s && s.ok === true).length;
+    // ok：true 绿 / false 红 / 'off' 灰（已关闭）/ 其它（null）= 未知
     const row = (label, ok, detail) => `
       <div class="ob-src">
-        <span class="dot ${ok === true ? '' : ok === false ? 'err' : ''}"></span>
+        <span class="dot ${ok === true ? '' : ok === false ? 'err' : ok === 'off' ? 'off' : ''}"></span>
         <span class="ob-src-name">${esc(label)}</span>
         <span class="muted small">${esc(detail || '')}</span>
       </div>`;
     host.innerHTML =
       sources.map((s) => row(AGENT_LABEL[s.id] || s.id, s.ok, s.ok === true ? `${s.detail || '已检测到'}——点智能体页看它的会话` : s.ok === false ? '已安装但读不到会话（路径可配）' : '未检测到（装了就会亮）')).join('') +
-      row('团队 Git（Gitea）', giteaOk, giteaOk === true ? '已连接，提交会自动归因到任务' : giteaOk === false ? '未连接——设置页配置组织后生效' : '状态未知');
+      row('团队 Git（Gitea）', giteaOff ? 'off' : giteaOk,
+        giteaOff ? '轮询已关闭（pollIntervalSec=0）——需要时把 config.json 里该项改回正数'
+          : giteaOk === true ? '已连接，提交会自动归因到任务' : giteaOk === false ? '未连接——设置页配置组织后生效' : '状态未知');
     host.insertAdjacentHTML('beforeend',
       `<p class="muted small">检测到 ${okCount}/${sources.length} 个 agent 源。没装的不会报错，装了自动亮。</p>`);
   }

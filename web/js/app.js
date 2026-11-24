@@ -215,10 +215,12 @@ async function refreshChrome() {
     // pill 改数进行中任务（同 /api/overview 响应的 tasks.doing，契约 v1.4 既有字段，零后端改动）
     const doing = Number(ov && ov.tasks && ov.tasks.doing) || 0;
     if (sess) sess.textContent = `${doing} 个任务进行中`;
+    // issue #1：pollIntervalSec=0 关闭轮询器时显示中性态，而不是「异常」（关不掉的红横幅）
+    const off = !!(ov.gitea && ov.gitea.disabled);
     const ok = !!(ov.gitea && ov.gitea.ok);
-    if (gitea) gitea.textContent = ok ? 'Gitea 已连接' : 'Gitea 异常';
-    if (foot) foot.textContent = ok ? 'Gitea 已连接 · example-org' : 'Gitea 连接异常';
-    if (footDot) footDot.className = 'dot' + (ok ? '' : ' err');
+    if (gitea) gitea.textContent = off ? 'Gitea 未启用' : ok ? 'Gitea 已连接' : 'Gitea 异常';
+    if (foot) foot.textContent = off ? 'Gitea 轮询已关闭' : ok ? 'Gitea 已连接 · example-org' : 'Gitea 连接异常';
+    if (footDot) footDot.className = 'dot' + (off ? ' off' : ok ? '' : ' err');
     // v2.9.43 多实例探测：端点不存在（旧版后端）就静默跳过，不打扰
     try {
       drawMultiInstance(await api('/api/instance'));
