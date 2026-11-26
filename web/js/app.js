@@ -214,6 +214,8 @@ async function refreshChrome() {
     // pill 改数进行中任务（同 /api/overview 响应的 tasks.doing，契约 v1.4 既有字段，零后端改动）
     const doing = Number(ov && ov.tasks && ov.tasks.doing) || 0;
     if (sess) sess.textContent = `${doing} 个任务进行中`;
+    if (foot) foot.textContent = isMock ? 'MOCK 模式 · 零出网' : '本地实例 · 数据不出机';
+    if (footDot) footDot.className = 'dot';
     // v2.9.43 多实例探测：端点不存在（旧版后端）就静默跳过，不打扰
     try {
       drawMultiInstance(await api('/api/instance'));
