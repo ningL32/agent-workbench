@@ -72,59 +72,7 @@ export async function render(el) {
           </div></div>
       </div>
 
-            <div class="set-card" id="card-gitea">
-        <div class="sc-h"><h4>${icon('terminal')}Gitea 动态源（可选 · 自建环境）</h4></div>
-        <div class="desc">开源版以 GitHub 为主（默认关闭轮询,横幅显示中性「未启用」）。自建 Gitea 的团队:填真实地址/组织,轮询间隔改回正数(如 60),并在凭据指引配置预授权头。</div>
-      <div class="frow"><label>服务地址</label>
-        <div><input readonly id="set-addr"><div class="hint">仅回环绑定，host 不可改；port 改动需重启生效</div></div></div>
-      <div class="frow"><label>Gitea 地址</label>
-        <div><input id="set-base" placeholder="https://gitea.example.com"></div></div>
-      <div class="frow"><label>组织</label>
-        <div><input id="set-org" placeholder="example-org"></div></div>
-      <div class="frow"><label>API 前缀</label>
-        <div><input readonly id="set-prefix"></div></div>
-      <div class="frow"><label>轮询间隔（秒）</label>
-        <div><input id="set-poll" type="number" min="0" max="3600" step="1"><div class="hint">0 = 关闭轮询（开源版默认,GitHub 为主）</div></div></div>
-      <div class="frow"><label>无更新预警阈值（秒）</label>
-        <div><input id="set-warn" type="number" min="60" step="60"><div class="hint" id="set-warn-hint"></div></div></div>
-      <div class="frow"><label>无更新危险阈值（秒）</label>
-        <div><input id="set-danger" type="number" min="60" step="60"><div class="hint" id="set-danger-hint"></div></div></div>
-      <div class="frow"><label>host 白名单</label>
-        <div><input readonly id="set-whitelist" class="mono"></div></div>
-      <div class="frow"><label>凭据来源</label>
-        <div class="note" id="set-cred">${icon('lock')}加载中…</div></div>
-
-            </div>
-
-<div class="set-card" id="cred-card">
-        <div class="sc-h">
-          <h4>${icon('terminal')}Gitea 凭据配置指引</h4>
-        </div>
-        <div class="desc">预授权头 = base64(用户名:令牌)，由你在 Gitea 个人设置生成；凭据本身不经过本页面、不落盘（红线），只在下方命令中自行替换后于你的终端执行一次。</div>
-        <div class="cred-cmd">
-          <pre class="mono" id="cred-cmd-text"></pre>
-          <button type="button" class="btn ghost xs" id="cred-copy">${icon('copy')}复制命令</button>
-        </div>
-        <div class="cred-actions">
-          <button type="button" class="btn ghost small" id="cred-test">${icon('zap')}测试连接</button>
-          <span class="note" id="cred-test-result"></span>
-        </div>
-      </div>
-
-      <div class="set-card" id="card-ignore">
-        <div class="sc-h"><h4>${icon('users')}成员册过滤</h4></div>
-        <div class="desc">Gitea 组织成员派生成员册时的忽略名单（管理员/机器账号等非干活账号）；名单内 login 不入成员册，大小写不敏感。保存设置时一并提交。</div>
-        <div class="frow"><label>忽略账号列表</label>
-          <div>
-            <div id="ignore-list" class="host-list"></div>
-            <div class="col-row host-add">
-              <input id="ignore-new" class="mono" placeholder="新增忽略账号，如 admin">
-              <button type="button" class="btn ghost xs add" id="ignore-add">${icon('plus')}添加</button>
-            </div>
-          </div></div>
-      </div>
-
-      <div class="set-card" id="card-gitee">
+            <div class="set-card" id="card-gitee">
         <div class="sc-h"><h4>${icon('git-merge')}Gitee 动态源</h4></div>
         <div class="desc">接入 Gitee（gitee.com）组织事件流（commit/PR），与 Gitea/GitHub 动态合流到同一活动词表。仅支持组织；公开组织匿名可拉（令牌只对私库必要）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
         <div class="frow"><label>启用</label>
@@ -327,9 +275,6 @@ export async function render(el) {
   // v2.9.26 新手引导重开入口：派发自定义事件，app.js 的监听开弹层（避免跨页直接 import 造成的循环依赖）
   el.querySelector('#btn-onboard').addEventListener('click', () => window.dispatchEvent(new CustomEvent('onboardingRedo')));
   el.querySelector('#setup-banner-go').addEventListener('click', scrollToCheckCard);
-  // 凭据指引卡：复制命令 + 测试连接（复用同一测试逻辑）
-  el.querySelector('#cred-copy').addEventListener('click', copyCredCmd);
-  wireTestPair('cred-test', 'cred-test-result');
   // GitHub 动态源（v2.9.17 页面化）：开关即时 PATCH / 凭据命令随 API 地址联动 / 复制
   el.querySelector('#gh-enabled').addEventListener('click', toggleGithub);
   el.querySelector('#gh-baseurl').addEventListener('input', drawGithubCmd);
@@ -346,9 +291,6 @@ export async function render(el) {
   el.querySelector('#radar-sync-btn').addEventListener('click', () => radarSync('sync'));
   el.querySelector('#radar-feishu-sync-btn').addEventListener('click', () => radarSync('sync-feishu'));
   el.querySelector('#radar-engine-test').addEventListener('click', radarEngineTest);
-  ['set-warn', 'set-danger'].forEach((id) => {
-    el.querySelector('#' + id).addEventListener('input', updateHints);
-  });
   // 信任 host 编辑器：行内删除（事件委托）+ 添加（按钮 / 回车）
   el.querySelector('#host-list').addEventListener('click', (e) => {
     const del = e.target.closest('[data-del]');
@@ -365,16 +307,6 @@ export async function render(el) {
 
   // 智能体观测：总开关 + 分源开关（即时 PATCH，同雷达开关口径）
   el.querySelector('#aa-enabled').addEventListener('click', toggleAa);
-  // 忽略账号编辑器：行内删除（事件委托）+ 添加（按钮 / 回车）
-  el.querySelector('#ignore-list').addEventListener('click', (e) => {
-    const del = e.target.closest('[data-del]');
-    if (!del) return;
-    const idx = Number(del.dataset.del);
-    drawIgnoreLogins(editableIgnoreValues().filter((_, i) => i !== idx));
-  });
-  el.querySelector('#ignore-add').addEventListener('click', addIgnore);
-  el.querySelector('#ignore-new').addEventListener('keydown', (e) => { if (e.key === 'Enter') addIgnore(); });
-
   // v2.9.39 IM 通知：四个开关只改本地态（随「保存设置」一起 PATCH）；测试消息即时发
   for (const id of ['im-enabled', 'im-digest-enabled', 'im-events-review', 'im-events-completed']) {
     const btn = el.querySelector('#' + id);
@@ -424,18 +356,6 @@ async function load() {
     const s = await apiGet('/api/settings');
     if (!rootEl) return;
     current = s || {};
-    const g = current.gitea || {};
-    root.querySelector('#set-addr').value = `${current.host || '127.0.0.1'}:${current.port || 7788}（仅回环绑定）`;
-    root.querySelector('#set-base').value = g.baseUrl || '';
-    root.querySelector('#set-org').value = g.org || '';
-    root.querySelector('#set-prefix').value = g.apiPrefix || '/api/v1';
-    root.querySelector('#set-poll').value = g.pollIntervalSec != null ? g.pollIntervalSec : 60;
-    root.querySelector('#set-warn').value = g.staleWarnSec != null ? g.staleWarnSec : 14400;
-    root.querySelector('#set-danger').value = g.staleDangerSec != null ? g.staleDangerSec : 86400;
-    root.querySelector('#set-whitelist').value = (g.hostWhitelist || []).join(', ');
-    root.querySelector('#set-cred').innerHTML =
-      `${icon('lock')}${esc(current.credential || '未知')} · 运行时读取 · 不落盘 · 不进日志`;
-    updateHints();
     // 钉钉采集 / 分析引擎 / 安全（二期新三卡）回读
     const dt = current.dingtalk || {};
     root.querySelector('#dt-dwsbin').value = dt.dwsBin || '';
@@ -453,15 +373,11 @@ async function load() {
     root.querySelector('#az-timeoutSec').value = az.timeoutSec != null ? az.timeoutSec : 300;
     drawHosts((current.security && current.security.trustedHosts) || []);
     // v2.9.7 成员册过滤（ignoreLogins）+ 智能体观测开关 + GitHub 源指引回读
-    drawIgnoreLogins((g && g.ignoreLogins) || []);
-    drawAa(current.agentActivity || {});
+        drawAa(current.agentActivity || {});
     drawGithub(current.github || null);
     drawGitee(current.gitee || null);
     drawIm(current.im || {});
     drawLearn(current.learn || {});
-    // 凭据命令模板：随 Gitea 地址代入（命令经 textContent 写入，防注入）
-    root.querySelector('#cred-cmd-text').textContent =
-      `git config --global http.${g.baseUrl || '<Gitea 地址>'}/.extraheader "<你的预授权头>"`;
     drawRadar(current.dingtalk && current.dingtalk.enabled !== false);
     // v2.9.29 D4：集成出口只读状态
     const wo = current.webhookOut || {};
@@ -558,207 +474,6 @@ function scrollToCheckCard() {
   const reduce = typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-}
-
-// ---- Gitea 凭据配置指引（v2）：命令模板可复制 + 测试连接（复用既有测试逻辑）；凭据零经页面 ----
-
-function credCommandText() {
-  const root = rootEl;
-  const pre = root && root.querySelector('#cred-cmd-text');
-  return pre ? pre.textContent : '';
-}
-
-async function copyCredCmd() {
-  const text = credCommandText();
-  if (!text) { toast('命令模板尚未加载', 'error'); return; }
-  let ok = false;
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      ok = true;
-    }
-  } catch { ok = false; }
-  if (!ok) {
-    // 无剪贴板权限（非安全上下文/无头环境）时的兜底：临时 textarea + execCommand
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      ok = document.execCommand('copy');
-      ta.remove();
-    } catch { ok = false; }
-  }
-  toast(ok ? '命令已复制：替换 <你的预授权头> 后在本机终端执行' : '复制失败，请手动选择命令文本复制', ok ? 'success' : 'error');
-}
-
-// ---- 信任 host 编辑器（v2 security.trustedHosts）：内置行只读 + 自定义行可删可增 ----
-
-function drawHosts(list) {
-  const root = rootEl;
-  if (!root) return;
-  const box = root.querySelector('#host-list');
-  if (!box) return;
-  const norm = (s) => String(s || '').trim().toLowerCase();
-  const users = (list || []).filter((h) => h && !BUILTIN_HOSTS.some((b) => norm(b) === norm(h)));
-  box.innerHTML = BUILTIN_HOSTS.map((h) => `
-    <div class="host-row">
-      <input readonly class="mono" value="${esc(h)}" aria-label="内置信任 host">
-      <span class="badge b-ro" title="后端内置信任，无需配置">内置，不可删</span>
-    </div>`).join('')
-    + users.map((h, i) => `
-    <div class="host-row">
-      <input class="mono" value="${esc(h)}" data-host-idx="${i}" aria-label="信任 host">
-      <button type="button" class="icon-btn" data-del="${i}" aria-label="删除该 host">${icon('trash')}</button>
-    </div>`).join('')
-    + (users.length ? '' : '<div class="hint">暂无自定义信任 host，仅内置项生效</div>');
-}
-
-function editableHostValues() {
-  const root = rootEl;
-  if (!root) return [];
-  return Array.from(root.querySelectorAll('#host-list input:not([readonly])'))
-    .map((i) => i.value.trim()).filter(Boolean);
-}
-
-function collectHosts() {
-  const out = [];
-  const seen = new Set();
-  for (const h of editableHostValues()) {
-    const key = h.toLowerCase();
-    if (seen.has(key) || BUILTIN_HOSTS.some((b) => b.toLowerCase() === key)) continue;
-    seen.add(key);
-    out.push(h);
-  }
-  return out;
-}
-
-function addHost() {
-  const root = rootEl;
-  if (!root) return;
-  const inp = root.querySelector('#host-new');
-  const v = (inp.value || '').trim();
-  if (!v) { toast('请先输入要信任的 host', 'info'); return; }
-  const exists = BUILTIN_HOSTS.concat(editableHostValues())
-    .some((h) => h.toLowerCase() === v.toLowerCase());
-  if (exists) { toast('该 host 已在列表中', 'info'); return; }
-  drawHosts(editableHostValues().concat(v));
-  inp.value = '';
-  inp.focus();
-}
-
-// ---- v2.9.7 智能体观测开关（agentActivity）：总开关 + 六源分开关，即时 PATCH（同雷达开关口径）----
-
-const AA_SOURCES = [
-  { id: 'workbuddy', name: 'WorkBuddy', loc: '~/.workbuddy/workbuddy.db' },
-  { id: 'zcode', name: 'ZCode', loc: '~/.zcode/cli' },
-  { id: 'claude', name: 'Claude', loc: '~/.claude/projects' },
-  { id: 'dsh', name: 'DSH', loc: '~/.dsh/sessions' },
-  { id: 'codex', name: 'Codex（ChatGPT 桌面）', loc: '~/.codex/sessions' },
-  { id: 'opencode', name: 'OpenCode', loc: '~/.local/share/opencode/opencode.db' },
-];
-
-function drawAa(sec) {
-  const root = rootEl;
-  if (!root) return;
-  const enabled = sec && sec.enabled !== false;
-  const sw = root.querySelector('#aa-enabled');
-  const tip = root.querySelector('#aa-enabled-tip');
-  if (sw) {
-    sw.setAttribute('aria-pressed', String(enabled));
-    sw.classList.toggle('off', !enabled);
-  }
-  if (tip) tip.textContent = enabled ? '已开启' : '已关闭';
-  const box = root.querySelector('#aa-sources');
-  if (!box) return;
-  const sources = (sec && sec.sources) || {};
-  box.innerHTML = AA_SOURCES.map((s) => {
-    const on = enabled && !(sources[s.id] && sources[s.id].enabled === false);
-    return `<div class="host-row">
-      <span style="flex:1;min-width:0"><b>${esc(s.name)}</b> <span class="muted small mono">${esc(s.loc)}</span></span>
-      <button type="button" class="switch${on ? '' : ' off'}" data-aa="${s.id}" aria-pressed="${on}" aria-label="${esc(s.name)} 观测开关"></button>
-    </div>`;
-  }).join('');
-  box.querySelectorAll('[data-aa]').forEach((swEl) => {
-    swEl.addEventListener('click', async () => {
-      const id = swEl.dataset.aa;
-      const next = swEl.getAttribute('aria-pressed') !== 'true';
-      try {
-        await api('/api/settings', { method: 'PATCH', body: { agentActivity: { sources: { [id]: { enabled: next } } } } });
-        swEl.setAttribute('aria-pressed', String(next));
-        swEl.classList.toggle('off', !next);
-        toast(`${AA_SOURCES.find((x) => x.id === id).name} 观测已${next ? '开启' : '关闭'}`, 'success');
-      } catch (e) {
-        toast(e.message);
-      }
-    });
-  });
-}
-
-async function toggleAa() {
-  const root = rootEl;
-  if (!root) return;
-  const sw = root.querySelector('#aa-enabled');
-  const next = sw.getAttribute('aria-pressed') !== 'true';
-  try {
-    const r = await api('/api/settings', { method: 'PATCH', body: { agentActivity: { enabled: next } } });
-    drawAa(r && r.agentActivity ? r.agentActivity : { enabled: next });
-    toast(next ? '智能体观测已开启' : '智能体观测已关闭（六源停止读取）', 'success');
-  } catch (e) {
-    toast(e.message);
-  }
-}
-
-// ---- v2.9.7 成员册过滤编辑器（gitea.ignoreLogins）：随「保存设置」一并提交（同 trustedHosts 模式）----
-
-function drawIgnoreLogins(list) {
-  const root = rootEl;
-  if (!root) return;
-  const box = root.querySelector('#ignore-list');
-  if (!box) return;
-  const users = list || [];
-  box.innerHTML = users.map((h, i) => `
-    <div class="host-row">
-      <input class="mono" value="${esc(h)}" data-ig-idx="${i}" aria-label="忽略账号">
-      <button type="button" class="icon-btn" data-ig-del="${i}" aria-label="删除该忽略账号">${icon('trash')}</button>
-    </div>`).join('')
-    + (users.length ? '' : '<div class="hint">暂无忽略账号——默认名单（admin）已随安装写入，如需调整请在此编辑后保存</div>');
-}
-
-function editableIgnoreValues() {
-  const root = rootEl;
-  if (!root) return [];
-  return Array.from(root.querySelectorAll('#ignore-list input'))
-    .map((i) => i.value.trim()).filter(Boolean);
-}
-
-function collectIgnoreLogins() {
-  const out = [];
-  const seen = new Set();
-  for (const v of editableIgnoreValues()) {
-    const key = v.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(v);
-  }
-  return out;
-}
-
-function addIgnore() {
-  const root = rootEl;
-  if (!root) return;
-  const inp = root.querySelector('#ignore-new');
-  const v = (inp.value || '').trim();
-  if (!v) { toast('请先输入要忽略的账号', 'info'); return; }
-  if (editableIgnoreValues().some((h) => h.toLowerCase() === v.toLowerCase())) {
-    toast('该账号已在列表中', 'info'); return;
-  }
-  drawIgnoreLogins(editableIgnoreValues().concat(v));
-  inp.value = '';
-  inp.focus();
 }
 
 // ---- v2.9.17 GitHub 源页面化（enabled/org/baseUrl 可经 PATCH 热生效；凭据仍 git config 零落盘）----
@@ -936,47 +651,6 @@ async function testSource(source, btnId, outId) {
   }
 }
 
-// ---- 设置保存：既有 gitea/gateway 节 + 二期新键（dingtalk 采集 / analyze 引擎 / security.trustedHosts）----
-
-function updateHints() {
-  const root = rootEl;
-  if (!root) return;
-  const w = Number(root.querySelector('#set-warn').value);
-  const d = Number(root.querySelector('#set-danger').value);
-  root.querySelector('#set-warn-hint').textContent = isFinite(w) && w > 0 ? `= ${fmtSec(w)}` : '';
-  root.querySelector('#set-danger-hint').textContent = isFinite(d) && d > 0 ? `= ${fmtSec(d)}` : '';
-}
-
-// 测试连接（既有逻辑参数化）：凭据指引卡入口复用（原独立表单行已并入该卡，避免同页双按钮）
-function wireTestPair(btnId, outId) {
-  const root = rootEl;
-  const btn = root && root.querySelector('#' + btnId);
-  if (!btn) return;
-  btn.addEventListener('click', () => testConnection(btnId, outId));
-}
-
-async function testConnection(btnId, outId) {
-  const root = rootEl;
-  if (!root) return;
-  const out = root.querySelector('#' + outId);
-  const btn = root.querySelector('#' + btnId);
-  if (!out || !btn) return;
-  btn.disabled = true;
-  out.textContent = '测试中…';
-  out.style.color = 'var(--muted)';
-  try {
-    const baseUrl = root.querySelector('#set-base').value.trim();
-    const r = await apiPost('/api/gitea/test', baseUrl ? { baseUrl } : {});
-    out.textContent = `✓ ok · ${r.latencyMs}ms · API ${r.apiVersion}`;
-    out.style.color = 'var(--green)';
-  } catch (e) {
-    out.textContent = `✗ ${e.code || 'ERROR'}: ${e.message}`;
-    out.style.color = 'var(--red)';
-    toast(e.message);
-  }
-  if (btn.isConnected) btn.disabled = false;
-}
-
 async function save() {
   const root = rootEl;
   if (!root) return;
@@ -984,13 +658,12 @@ async function save() {
     const v = Number(root.querySelector('#' + id).value);
     return isFinite(v) && v > 0 ? v : fallback;
   };
-  const g = (current && current.gitea) || {};
   const dt = (current && current.dingtalk) || {};
   const az = (current && current.analyze) || {};
   // GitHub 源：开关即时 PATCH 不走保存；这里只随保存提交 org/baseUrl。启用时 org 必填（org events 仅支持组织）
   const ghEnabled = root.querySelector('#gh-enabled').getAttribute('aria-pressed') === 'true';
   const ghOrg = root.querySelector('#gh-org').value.trim();
-  if (ghEnabled && !ghOrg) { toast('GitHub 已启用：组织名必填（仅支持组织，不支持个人账号）', 'error'); return; }
+  if (ghEnabled && !ghOrg) { toast('GitHub 已启用：组织名/用户名必填', 'error'); return; }
   const geEnabled = root.querySelector('#ge-enabled').getAttribute('aria-pressed') === 'true';
   const geOrg = root.querySelector('#ge-org').value.trim();
   if (geEnabled && !geOrg) { toast('Gitee 已启用：组织名必填（仅支持组织）', 'error'); return; }
@@ -1035,14 +708,6 @@ async function save() {
     dailyReview: numOr('#learn-daily-review', 3, 0, 10)
   };
   const payload = {
-    gitea: {
-      baseUrl: root.querySelector('#set-base').value.trim() || g.baseUrl,
-      org: root.querySelector('#set-org').value.trim(),
-      pollIntervalSec: num('set-poll', g.pollIntervalSec || 60),
-      staleWarnSec: num('set-warn', g.staleWarnSec || 14400),
-      staleDangerSec: num('set-danger', g.staleDangerSec || 86400),
-      ignoreLogins: collectIgnoreLogins() // v2.9.7 成员册过滤名单（编辑器随保存一并提交）
-    },
     github: {
       org: ghOrg,
       accountType: root.querySelector('#gh-account-type').value, // v2.9.84 组织/个人

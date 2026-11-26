@@ -42,7 +42,7 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 - **Session evidence** — suggested attachments scored per task, one-click or batch confirm
 - **Reports** — auto-generated daily digest and weekly review, exportable as Markdown
 - **Heatmap & scorecards** — 28-day activity grid per agent; SVG scorecard endpoints
-- **Integrations** — MCP server (stdio) so your agents can query the board; webhook out; IM notify (Feishu/DingTalk bots); GitHub/Gitea/Gitee activity feeds (GitHub-first: personal accounts supported via user events)
+- **Integrations** — MCP server (stdio) so your agents can query the board; webhook out; IM notify (Feishu/DingTalk bots); GitHub activity feeds (GitHub-first: personal accounts via user events; Gitea/Gitee optional self-hosted integrations)
 - **Governance** — credential never touches disk (git config runtime read), redaction on every output, SSRF allowlist for all outbound, single-instance lock with warning, backup/restore
 
 ## Requirements

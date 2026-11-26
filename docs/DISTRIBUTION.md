@@ -19,12 +19,13 @@ Super Workbench 是装进 DSH 的一个插件。装好之后，每次启动 DSH�
 | 组件 | 当前验证版本 | 说明 |
 |---|---|---|
 | DSH 宿主（@deepseek-ai/dsh） | **0.2.1-rc.2** | 本插件按此版本全套验证；升 DSH 后需重跑兼容探针 |
-| 超级工作台（fde-console）插件 | **2.9.86**（与 package.json 同步） | 与 DSH 0.2.1-rc.2 配套；运行期可在「总览 → 版本与兼容性」卡自证 |
+| 超级工作台（fde-console）插件 | **2.9.87**（与 package.json 同步） | 与 DSH 0.2.1-rc.2 配套；运行期可在「总览 → 版本与兼容性」卡自证 |
 | Node.js | **≥22.13 LTS**（实测 v24.15.0） | 唯一运行时依赖；node:sqlite 门槛（会话观测/阅读器必需），Node 18/20 不可用。注：`zlib.zstd*`（DSH 会话 zstd 日志解压）需 ≥22.15，22.13/22.14 上 DSH 源自动降级只读明文 rollout，不影响其余功能 |
 | dsh-better-sidebar（可选，原生侧栏 tab） | 0.28.0 | 要求 DSH 0.2.1-rc.1+ |
 | 钉钉 dws（雷达功能·可选） | 1.0.59（实测） | 需完成钉钉登录；不用任务雷达可不装 |
 | 飞书 lark-cli（雷达功能·可选） | 1.0.98（实测） | `npm i -g @larksuite/cli`；需 `lark-cli config init` 应用配置 + `auth login` 用户授权；不用飞书妙记可不装 |
-| Gitea / GitHub / Gitee（团队动态） | Gitea 28.1.0（实测） | 可选；凭据走 git config 预授权头，零落盘 |
+| GitHub（团队动态·主源） | api.github.com（实测） | 个人账号经 user events 即可接入（仅公开活动）；组织可含私库（需 PAT） |
+| Gitea / Gitee（团队动态·可选） | Gitea 28.1.0（实测） | 自建环境可选接入；凭据走 git config 预授权头，零落盘 |
 
 > 约定：升级任一组件后，先跑插件设置页的「一键体检」，再抽查一个核心动线（建任务/启动会话/雷达分析）。
 
@@ -37,7 +38,7 @@ Super Workbench 是装进 DSH 的一个插件。装好之后，每次启动 DSH�
 | 1 | Node ≥ 22.13 | `node -v` | v22.13 LTS 及以上（node:sqlite 门槛） |
 | 2 | DSH 本体 | `dsh --version` | 打印版本号（0.2.1-rc.2） |
 | 3 | pnpm | `pnpm --version` | 打印版本号 |
-| 4 | Gitea 凭据（团队动态用，可选） | `git config --global --get http.<你的Gitea地址>/.extraheader` | 打印出 `Authorization: Basic` 开头的一行 |
+| 4 | GitHub 凭据（团队动态·主源，可选） | 公开活动匿名即可；私库/组织需 `git config --global http.https://api.github.com/.extraheader` | 打印出 `Authorization: Bearer` 开头的一行 |
 | 5 | 雷达三件套（任务雷达用，可选） | `dsh --version`；dws 登录态按其自身引导确认；LLM 路由在 DSH 界面确认 | dsh 可用 + dws 已登录 + 路由已配 |
 | 5b | 飞书采集（可选，飞书妙记用） | `lark-cli --version`；`lark-cli auth status --json --verify` | 打印版本号 + user 身份 `verified:true`（不用飞书可不装，雷达钉钉源不受影响） |
 
@@ -143,7 +144,7 @@ git config --global http.<你的Gitea地址>/.extraheader "Authorization: Basic 
 
 **数据落点**：`C:\Users\<你>\.dsh\fde-console\`。首次启动工作台会自动在这里生成默认配置，无需手工创建。
 
-**备份（可选，默认不自动跑）**：任务、时间轴、人工日报这些数据**只存在你自己的电脑上**（Gitea 动态可重拉，但任务史和日报不可重建）。本地单机默认不每天自动备份，但备份能力保留：
+**备份（可选，默认不自动跑）**：任务、时间轴、人工日报这些数据**只存在你自己的电脑上**（动态流可重拉，但任务史和日报不可重建）。本地单机默认不每天自动备份，但备份能力保留：
 
 - **手动档（推荐，按需跑）**：
 

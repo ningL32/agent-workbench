@@ -127,13 +127,6 @@ function renderStats(ov) {
   const total = ['todo', 'doing', 'review', 'done'].reduce((s, k) => s + (Number(t[k]) || 0), 0);
   // 契约 v1.4：/api/overview 的 tasks 带 overdue 计数（服务端口径；旧后端无此字段时按 0 展示）
   const overdue = Number(t.overdue) || 0;
-  const g = (ov && ov.gitea) || {};
-  const ok = !!g.ok;
-  const gOff = !!g.disabled; // issue #1：轮询器关闭 = 中性态，不是「异常」
-  // v2.9.69 周期与验收指标（只增字段）：旧后端无 cycle 时整卡按 0/null 中性降级
-  const cyc = (ov && ov.cycle) || {};
-  const acc30 = Number(cyc.accepted30d) || 0;
-  const med = cyc.medianAcceptHours;
   root.querySelector('#ov-stats').innerHTML = `
     <div class="stat"><b>${total}</b><span>任务总数（进行中 ${Number(t.doing) || 0}）</span></div>
     <div class="stat"><b style="color:${overdue > 0 ? 'var(--red)' : 'var(--muted)'}">${overdue}</b><span>逾期任务</span></div>
