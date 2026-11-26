@@ -258,3 +258,40 @@ test('githubClient testConnection：org 缺失 fail-fast 不出网；白名单�
   assert.strictEqual(r1.code, 'HOST_NOT_ALLOWED');
   assert.ok(!('total' in r1), '守卫失败不产生拉取结果');
 });
+
+test('accountType=user：/users/{name}/events 端点（个人公开活动），org 模式不变', async () => {
+  const iso = new Date(Date.now() - 2 * 86400000).toISOString();
+  const events = [ghEvent('PushEvent', { created: iso, payload: { ref: 'refs/heads/main',
+    commits: [{ sha: 'cd34'.repeat(10), message: 'feat: 个人公开提交', timestamp: iso }] } })];
+  const seen = [];
+  const stub = http.createServer((req, res) => {
+    seen.push(req.url);
+    if (req.url.includes('/users/test-user/events') || req.url.includes('/orgs/test-org/events')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify(events));
+    }
+    res.writeHead(404);
+    return res.end('{}');
+  });
+  await new Promise((resolve) => stub.listen(0, '127.0.0.1', resolve));
+  const port = stub.address().port;
+  const dir = tmpDir();
+  try {
+    const cfg = ghCfg(port, dir, { accountType: 'user', org: 'test-user' });
+    const first = await githubClient.pollActivities(cfg);
+    assert.equal(first.length, 1, 'user 端点事件入流');
+    assert.ok(seen.some((u) => u.includes('/users/test-user/events')), '命中 /users/ 端点');
+    assert.ok(!seen.some((u) => u.includes('/orgs/')), '不再打 /orgs/ 端点');
+    // testConnection 同样走 user 端点
+    const tc = await githubClient.testConnection(cfg);
+    assert.equal(tc.ok, true, 'testConnection user 端点连通');
+    assert.ok(seen.filter((u) => u.includes('/users/')).length >= 2, 'testConnection 也打 /users/');
+    // org 模式回归:默认 accountType 缺省 = org 端点
+    const cfgOrg = ghCfg(port, dir);
+    await githubClient.pollActivities(cfgOrg);
+    assert.ok(seen.some((u) => u.includes('/orgs/test-org/events')), '缺省仍是 /orgs/（回归锚）');
+  } finally {
+    stub.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

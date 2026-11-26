@@ -29,7 +29,7 @@ export function openOnboarding() {
       <p class="muted small">检测到的 agent 会话库与团队 Git 动态会自动出现在对应页面，无需任何配置。</p>
     </div>
     <div class="ob-step" data-step="2" hidden>
-      <h3>正在扫描本机 agent……</h3>
+      <h3 id="ob-scan-title">正在扫描本机 agent……</h3>
       <div class="ob-scan" id="ob-scan"><div class="loading">检测中…</div></div>
     </div>
     <div class="ob-step" data-step="3" hidden>
@@ -79,7 +79,16 @@ export function openOnboarding() {
       giteaOk = !!(ov && ov.gitea && ov.gitea.ok);
       giteaOff = !!(ov && ov.gitea && ov.gitea.disabled); // issue #1：轮询器关闭 ≠ 未连接
     } catch (e) { giteaOk = null; }
-    const okCount = sources.filter((s) => s && s.ok === true).length;
+    // v2.9.83 修复（业主真机反馈）：扫描完成后标题停在「正在扫描……」且「下一步」被藏——
+    // 观感即卡死。finally 兜底：无论成败,标题切「扫描完成」并恢复下一步按钮。
+    const finish = () => {
+      const title = box.querySelector('#ob-scan-title');
+      if (title) title.textContent = `扫描完成 · ${sources.filter((s) => s && s.ok === true).length}/${sources.length} 个 agent 源`;
+      const next = box.querySelector('#ob-next');
+      if (next) { next.textContent = '下一步'; next.hidden = false; }
+    };
+    try {
+      const okCount = sources.filter((s) => s && s.ok === true).length;
     // ok：true 绿 / false 红 / 'off' 灰（已关闭）/ 其它（null）= 未知
     const row = (label, ok, detail) => `
       <div class="ob-src">
@@ -94,6 +103,7 @@ export function openOnboarding() {
           : giteaOk === true ? '已连接，提交会自动归因到任务' : giteaOk === false ? '未连接——设置页配置组织后生效' : '状态未知');
     host.insertAdjacentHTML('beforeend',
       `<p class="muted small">检测到 ${okCount}/${sources.length} 个 agent 源。没装的不会报错，装了自动亮。</p>`);
+    finish();
   }
 
   box.querySelector('#ob-next').addEventListener('click', () => {

@@ -86,14 +86,19 @@ export async function render(el) {
 
       <div class="set-card" id="card-github">
         <div class="sc-h"><h4>${icon('git-branch')}GitHub 动态源</h4></div>
-        <div class="desc">接入 GitHub 组织事件流（commit/PR），与 Gitea 动态合流到同一活动词表——成果自动归因、日报预填、团队动态自动吃到。仅支持组织（org events 端点），个人账号拉不到；保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
+        <div class="desc">接入 GitHub 事件流（commit/PR），与 Gitea 动态合流到同一活动词表——成果自动归因、日报预填、团队动态自动吃到。组织/个人账号均支持（v2.9.84）：组织=可含私库（需 PAT）；个人=仅公开活动（GitHub 平台限制）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
         <div class="frow"><label>启用</label>
           <div><span class="switch-line">
             <button type="button" class="switch" id="gh-enabled" aria-pressed="false" aria-label="GitHub 动态源开关"></button>
             <span class="muted small" id="gh-enabled-tip">…</span>
           </span><div class="hint">关闭 = 零出网零写盘；未配凭据时公共组织匿名拉取（限流 60 次/时/IP），私库需 PAT</div></div></div>
-        <div class="frow"><label>组织名</label>
-          <div><input id="gh-org" placeholder="GitHub 组织名，如 my-org（启用时必填）"></div></div>
+        <div class="frow"><label>账号类型</label>
+          <div><select id="gh-account-type">
+            <option value="org">组织（org events，可含私库）</option>
+            <option value="user">个人（user events，仅公开活动）</option>
+          </select><div class="hint">个人 = 你的 GitHub 用户名的公开动态；私库活动此端点拉不到（平台限制）</div></div></div>
+        <div class="frow"><label id="gh-org-label">组织名</label>
+          <div><input id="gh-org" placeholder="组织名或用户名（启用时必填）"></div></div>
         <div class="frow"><label>API 地址</label>
           <div><input id="gh-baseurl" class="mono" placeholder="https://api.github.com"><div class="hint">GitHub Enterprise 换成自建地址——host 须先在 config.json 的 github.hostWhitelist 白名单内（白名单仅手改）</div></div></div>
         <div class="frow"><label>凭据命令</label>
@@ -773,6 +778,7 @@ function drawGithub(gh) {
   sw.setAttribute('aria-pressed', String(on));
   sw.classList.toggle('off', !on);
   root.querySelector('#gh-enabled-tip').textContent = on ? '已启用' : '未启用';
+  root.querySelector('#gh-account-type').value = gh && gh.accountType === 'user' ? 'user' : 'org';
   root.querySelector('#gh-org').value = (gh && gh.org) || '';
   root.querySelector('#gh-baseurl').value = (gh && gh.baseUrl) || '';
   drawGithubCmd();
@@ -784,7 +790,7 @@ async function toggleGithub() {
   const sw = root.querySelector('#gh-enabled');
   const next = sw.getAttribute('aria-pressed') !== 'true';
   const org = root.querySelector('#gh-org').value.trim();
-  if (next && !org) { toast('启用前先填组织名（仅支持组织，不支持个人账号）', 'error'); return; }
+  if (next && !org) { toast('启用前先填组织名或用户名', 'error'); return; }
   try {
     // 开关即时 PATCH（同雷达开关口径）：热生效随下个轮询周期，无需重启
     const r = await api('/api/settings', { method: 'PATCH', body: { github: { enabled: next } } });
@@ -1034,6 +1040,7 @@ async function save() {
     },
     github: {
       org: ghOrg,
+      accountType: root.querySelector('#gh-account-type').value, // v2.9.84 组织/个人
       baseUrl: root.querySelector('#gh-baseurl').value.trim()
     },    gitee: {
       org: geOrg,
