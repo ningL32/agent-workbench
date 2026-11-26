@@ -59,6 +59,7 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 ```bash
 # 1. install / update the plugin into a profile (the profile is created on first use)
 dsh plugin --profile fde-dev add fde-console        # from npm — one line
+#    (if the dsh market index lags behind npm, pin it: fde-console@2.9.81)
 #    …or from a local clone of this repo:
 #    dsh plugin --profile fde-dev add <this repo path>
 

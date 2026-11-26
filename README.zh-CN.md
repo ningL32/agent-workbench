@@ -2,7 +2,7 @@
 
 # 超级工作台（fde-console · Super Workbench）
 
-当前版本 v2.9.81
+当前版本 v2.9.82
 
 [![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -61,6 +61,7 @@
 ```bash
 # 1. 把插件装进 profile（首次执行自动创建 profile）
 dsh plugin --profile fde-dev add fde-console        # npm 一行安装（推荐）
+#    （若市场索引同步滞后于 npm,钉版本: fde-console@2.9.81）
 #    …或从本地克隆安装：
 #    dsh plugin --profile fde-dev add <本仓库路径>
 
