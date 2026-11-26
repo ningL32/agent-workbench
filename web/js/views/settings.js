@@ -672,6 +672,70 @@ function addHost() {
   inp.focus();
 }
 
+
+
+// ---- v2.9.7 智能体观测开关（agentActivity）：总开关 + 六源分开关，即时 PATCH（同雷达开关口径）----
+
+const AA_SOURCES = [
+  { id: 'workbuddy', name: 'WorkBuddy', loc: '~/.workbuddy/workbuddy.db' },
+  { id: 'zcode', name: 'ZCode', loc: '~/.zcode/cli' },
+  { id: 'claude', name: 'Claude', loc: '~/.claude/projects' },
+  { id: 'dsh', name: 'DSH', loc: '~/.dsh/sessions' },
+  { id: 'codex', name: 'Codex（ChatGPT 桌面）', loc: '~/.codex/sessions' },
+  { id: 'opencode', name: 'OpenCode', loc: '~/.local/share/opencode/opencode.db' },
+];
+
+function drawAa(sec) {
+  const root = rootEl;
+  if (!root) return;
+  const enabled = sec && sec.enabled !== false;
+  const sw = root.querySelector('#aa-enabled');
+  const tip = root.querySelector('#aa-enabled-tip');
+  if (sw) {
+    sw.setAttribute('aria-pressed', String(enabled));
+    sw.classList.toggle('off', !enabled);
+  }
+  if (tip) tip.textContent = enabled ? '已开启' : '已关闭';
+  const box = root.querySelector('#aa-sources');
+  if (!box) return;
+  const sources = (sec && sec.sources) || {};
+  box.innerHTML = AA_SOURCES.map((s) => {
+    const on = enabled && !(sources[s.id] && sources[s.id].enabled === false);
+    return `<div class="host-row">
+      <span style="flex:1;min-width:0"><b>${esc(s.name)}</b> <span class="muted small mono">${esc(s.loc)}</span></span>
+      <button type="button" class="switch${on ? '' : ' off'}" data-aa="${s.id}" aria-pressed="${on}" aria-label="${esc(s.name)} 观测开关"></button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-aa]').forEach((swEl) => {
+    swEl.addEventListener('click', async () => {
+      const id = swEl.dataset.aa;
+      const next = swEl.getAttribute('aria-pressed') !== 'true';
+      try {
+        await api('/api/settings', { method: 'PATCH', body: { agentActivity: { sources: { [id]: { enabled: next } } } } });
+        swEl.setAttribute('aria-pressed', String(next));
+        swEl.classList.toggle('off', !next);
+        toast(`${AA_SOURCES.find((x) => x.id === id).name} 观测已${next ? '开启' : '关闭'}`, 'success');
+      } catch (e) {
+        toast(e.message);
+      }
+    });
+  });
+}
+
+async function toggleAa() {
+  const root = rootEl;
+  if (!root) return;
+  const sw = root.querySelector('#aa-enabled');
+  const next = sw.getAttribute('aria-pressed') !== 'true';
+  try {
+    const r = await api('/api/settings', { method: 'PATCH', body: { agentActivity: { enabled: next } } });
+    drawAa(r && r.agentActivity ? r.agentActivity : { enabled: next });
+    toast(next ? '智能体观测已开启' : '智能体观测已关闭（六源停止读取）', 'success');
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 async function testSource(source, btnId, outId) {
   const root = rootEl;
   if (!root) return;
@@ -1080,16 +1144,4 @@ async function importLearn() {
   }
 }
 
-async function toggleAa() {
-  const root = rootEl;
-  if (!root) return;
-  const sw = root.querySelector('#aa-enabled');
-  const next = sw.getAttribute('aria-pressed') !== 'true';
-  try {
-    const r = await api('/api/settings', { method: 'PATCH', body: { agentActivity: { enabled: next } } });
-    drawAa(r && r.agentActivity ? r.agentActivity : { enabled: next });
-    toast(next ? '智能体观测已开启' : '智能体观测已关闭（六源停止读取）', 'success');
-  } catch (e) {
-    toast(e.message);
-  }
-}
+
