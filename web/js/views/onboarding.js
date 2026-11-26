@@ -87,8 +87,7 @@ export function openOnboarding() {
       const next = box.querySelector('#ob-next');
       if (next) { next.textContent = '下一步'; next.hidden = false; }
     };
-    try {
-      const okCount = sources.filter((s) => s && s.ok === true).length;
+    const okCount = sources.filter((s) => s && s.ok === true).length;
     // ok：true 绿 / false 红 / 'off' 灰（已关闭）/ 其它（null）= 未知
     const row = (label, ok, detail) => `
       <div class="ob-src">
