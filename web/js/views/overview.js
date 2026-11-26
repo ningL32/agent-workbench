@@ -127,14 +127,16 @@ function renderStats(ov) {
   const total = ['todo', 'doing', 'review', 'done'].reduce((s, k) => s + (Number(t[k]) || 0), 0);
   // 契约 v1.4：/api/overview 的 tasks 带 overdue 计数（服务端口径；旧后端无此字段时按 0 展示）
   const overdue = Number(t.overdue) || 0;
+  // v2.9.69 周期与验收指标（只增字段）：旧后端无 cycle 时整卡按 0/null 中性降级
+  const cyc = (ov && ov.cycle) || {};
+  const acc30 = Number(cyc.accepted30d) || 0;
+  const med = cyc.medianAcceptHours;
   root.querySelector('#ov-stats').innerHTML = `
     <div class="stat"><b>${total}</b><span>任务总数（进行中 ${Number(t.doing) || 0}）</span></div>
     <div class="stat"><b style="color:${overdue > 0 ? 'var(--red)' : 'var(--muted)'}">${overdue}</b><span>逾期任务</span></div>
     <div class="stat"><b>${Number(ov.agents) || 0}</b><span>在册智能体</span></div>
     <div class="stat"><b>${Number(ov.activities24h) || 0}</b><span>24h 团队动态</span></div>
-    <div class="stat"><b>${acc30}</b><span>30d 验收${med != null ? ` · 中位 ${med}h` : ''}</span></div>
-    <div class="stat"><b style="color:${gOff ? 'var(--muted)' : ok ? 'var(--green)' : 'var(--red)'}">${gOff ? '未启用' : ok ? '已连接' : '异常'}</b>
-      <span>Gitea · ${gOff ? '轮询已关闭（pollIntervalSec=0）' : g.lastError ? esc(String(g.lastError)).slice(0, 24) : `拉取于 ${fmtAgo(g.lastPollAt)}`}</span></div>`;
+    <div class="stat"><b>${acc30}</b><span>30d 验收${med != null ? ` · 中位 ${med}h` : ''}</span></div>`;
   renderActions(ov);
   // v2.9.77 晨会简报:聚合既有数源为可复制 Markdown(确定性,零 LLM),供站会/客户群直接粘贴
   apiGet('/api/digest').then((d) => {

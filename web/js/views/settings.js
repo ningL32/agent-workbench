@@ -1,8 +1,8 @@
-// F4 设置：读写 /api/settings（脱敏视图 + deep merge 部分更新）+ 「测试连接」调 /api/gitea/test
+// F4 设置：读写 /api/settings（脱敏视图 + deep merge 部分更新）+ 「测试连接」
 // v1.5.1：gateway 节（enabled/timeoutSec 可改；bin/minVersion 只读展示，版本比对见智能体页状态徽标）
 // v2 设置页产品化二期：环境体检卡（GET /api/setup/check 六项 + 失败 hint）+ 引导条（allOk=false 时置顶）
 //   + 文件级配置搬进 UI（钉钉采集 dwsBin/dwsTimeoutSec/maxMessages、分析引擎 dshBin/timeoutSec、
-//   安全 trustedHosts 编辑器，localhost/127.0.0.1 内置不可删）+ Gitea 凭据配置指引卡
+//   安全 trustedHosts 编辑器，localhost/127.0.0.1 内置不可删）
 //   （凭据本身永不经页面：只展示可复制命令模板 + 测试连接，红线不变）
 import { api, apiGet, apiPost } from '../api.js';
 import { esc, toast, icon, fmtSec, fmtClock, busyBtn } from '../ui.js';
@@ -39,7 +39,7 @@ export async function render(el) {
 
 <div class="set-card" id="card-github">
         <div class="sc-h"><h4>${icon('git-branch')}GitHub 动态源</h4></div>
-        <div class="desc">接入 GitHub 事件流（commit/PR），与 Gitea 动态合流到同一活动词表——成果自动归因、日报预填、团队动态自动吃到。组织/个人账号均支持（v2.9.84）：组织=可含私库（需 PAT）；个人=仅公开活动（GitHub 平台限制）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
+        <div class="desc">接入 GitHub 事件流（commit/PR）——开源版的主动态源，成果自动归因、日报预填、团队动态自动吃到。组织/个人账号均支持（v2.9.84）：组织=可含私库（需 PAT）；个人=仅公开活动（GitHub 平台限制）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
         <div class="frow"><label>启用</label>
           <div><span class="switch-line">
             <button type="button" class="switch" id="gh-enabled" aria-pressed="false" aria-label="GitHub 动态源开关"></button>
@@ -74,7 +74,7 @@ export async function render(el) {
 
             <div class="set-card" id="card-gitee">
         <div class="sc-h"><h4>${icon('git-merge')}Gitee 动态源</h4></div>
-        <div class="desc">接入 Gitee（gitee.com）组织事件流（commit/PR），与 Gitea/GitHub 动态合流到同一活动词表。仅支持组织；公开组织匿名可拉（令牌只对私库必要）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
+        <div class="desc">接入 Gitee（gitee.com）组织事件流（commit/PR），可选自建接入，与 GitHub 动态合流到同一活动词表。仅支持组织；公开组织匿名可拉（令牌只对私库必要）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
         <div class="frow"><label>启用</label>
           <div><span class="switch-line">
             <button type="button" class="switch" id="ge-enabled" aria-pressed="false" aria-label="Gitee 动态源开关"></button>
