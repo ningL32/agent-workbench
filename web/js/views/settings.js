@@ -619,6 +619,59 @@ async function copyGeCredCmd() {
 }
 
 // v2.9.19 源探测：按表单当前值（org/baseUrl 未保存也可测）调 /api/sources/test，结果行内展示
+function drawHosts(list) {
+  const root = rootEl;
+  if (!root) return;
+  const box = root.querySelector('#host-list');
+  if (!box) return;
+  const norm = (s) => String(s || '').trim().toLowerCase();
+  const users = (list || []).filter((h) => h && !BUILTIN_HOSTS.some((b) => norm(b) === norm(h)));
+  box.innerHTML = BUILTIN_HOSTS.map((h) => `
+    <div class="host-row">
+      <input readonly class="mono" value="${esc(h)}" aria-label="内置信任 host">
+      <span class="badge b-ro" title="后端内置信任，无需配置">内置，不可删</span>
+    </div>`).join('')
+    + users.map((h, i) => `
+    <div class="host-row">
+      <input class="mono" value="${esc(h)}" data-host-idx="${i}" aria-label="信任 host">
+      <button type="button" class="icon-btn" data-del="${i}" aria-label="删除该 host">${icon('trash')}</button>
+    </div>`).join('')
+    + (users.length ? '' : '<div class="hint">暂无自定义信任 host，仅内置项生效</div>');
+}
+
+function editableHostValues() {
+  const root = rootEl;
+  if (!root) return [];
+  return Array.from(root.querySelectorAll('#host-list input:not([readonly])'))
+    .map((i) => i.value.trim()).filter(Boolean);
+}
+
+function collectHosts() {
+  const out = [];
+  const seen = new Set();
+  for (const h of editableHostValues()) {
+    const key = h.toLowerCase();
+    if (seen.has(key) || BUILTIN_HOSTS.some((b) => b.toLowerCase() === key)) continue;
+    seen.add(key);
+    out.push(h);
+  }
+  return out;
+}
+
+function addHost() {
+  const root = rootEl;
+  if (!root) return;
+  const inp = root.querySelector('#host-new');
+  const v = (inp.value || '').trim();
+  if (!v) { toast('请先输入要信任的 host', 'info'); return; }
+  const exists = BUILTIN_HOSTS.concat(editableHostValues())
+    .some((h) => h.toLowerCase() === v.toLowerCase());
+  if (exists) { toast('该 host 已在列表中', 'info'); return; }
+  drawHosts(editableHostValues().concat(v));
+  inp.value = '';
+  inp.focus();
+}
+
 async function testSource(source, btnId, outId) {
   const root = rootEl;
   if (!root) return;
