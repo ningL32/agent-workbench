@@ -1527,3 +1527,13 @@ a.diary-src:hover { text-decoration: underline; }
 .rs-draft input, .rs-draft textarea, .rs-draft select { width: 100%; margin-bottom: 4px; }
 .rs-right .rs-kb-form { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .rs-kb-hit { border-bottom: 1px solid var(--border); padding: 4px 0; }
+
+/* ---- 调研视图 v2.9.90:方案面板 + 工作面优化 ---- */
+.rs-prop-md { max-height: 560px; overflow: auto; background: var(--bg-elev, rgba(255,255,255,.03)); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; white-space: pre-wrap; }
+.rs-prop-actions { display: flex; gap: 6px; margin-top: 6px; }
+.rs-msg { padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; }
+.rs-msg-FDE { background: rgba(59,130,246,.08); border-left: 3px solid var(--accent); }
+.rs-msg-AI { background: rgba(255,255,255,.03); border-left: 3px solid var(--muted); }
+.rs-msg-body { margin-top: 2px; line-height: 1.5; }
+.rs-msg-kind { color: var(--muted); font-size: 12px; }
+.rs-input textarea:focus { outline: 1px solid var(--accent); }

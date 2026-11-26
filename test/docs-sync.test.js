@@ -231,6 +231,8 @@ const UNDOCUMENTED_OK = new Set([
   'POST /api/research/kb/documents',
   'GET /api/research/kb/search',
   'GET /api/research/export',
+  'POST /api/research/interviews/:p/proposal',
+  'POST /api/research/interviews/:p/decompose',
   'POST /api/research/kb/bootstrap',
   'GET /api/research/health',
   'GET /api/digest',

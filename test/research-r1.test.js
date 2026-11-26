@@ -426,3 +426,43 @@ test('Tier2:collectWeeklyFacts projectDir 过滤会话/任务/日报;全局口�
     diaryMod.loadDiaries = origDiaries;
   }
 });
+
+// ---------- v2.9.90:方案生成与拆解(访谈→方案→任务) ----------
+test('方案:生成(存 interview.proposal)→拆解(产出 pending 草稿,fromProposal 标记)→闸门', async () => {
+  const fs2 = require('node:fs');
+  const os2 = require('node:os');
+  const path2 = require('node:path');
+  const interviews = require('../lib/research/interviews');
+  const llm = require('../lib/research/llm');
+  const cfg = {};
+  const ctx = { dataDir: fs2.mkdtempSync(path2.join(os2.tmpdir(), 'fde-proposal-')) };
+  const origChat = llm.chat;
+  try {
+    const iv = interviews.createInterview(ctx, { sceneTitle: '方案测试场景' });
+    const data = interviews.loadResearch(ctx);
+    data.messages.push({ id: 'm1', interviewId: iv.id, role: 'FDE', kind: 'normal', text: '客户要月度报表自动化', ts: new Date().toISOString() });
+    interviews.saveResearch(ctx, data);
+    // 按调用次序 mock:第一次=方案 md,第二次=拆解 JSON
+    let call = 0;
+    llm.chat = async () => {
+      call += 1;
+      return call === 1
+        ? { text: '# 场景方案 · 方案测试场景\n\n## 五、任务建议\n1. 月度报表自动化 —— 按部门分发;依赖:无;优先级:high', channel: 'dsh', modelId: 'stub' }
+        : { text: '{"drafts":[{"title":"月度报表自动化","desc":"目标:自动化按月汇总;验收:部门收到","priority":"high","quote":"1. 月度报表自动化 —— 按部门分发;依赖:无;优先级:high"}]}', channel: 'dsh', modelId: 'stub' };
+    };
+    const gen = await interviews.generateProposal(ctx, cfg, iv.id);
+    assert.ok(gen.proposal && gen.proposal.md.includes('任务建议'), '方案 md 存储于 interview.proposal');
+    const it = interviews.loadResearch(ctx).interviews.find((i) => i.id === iv.id);
+    assert.ok(it.proposal.promptVersion, '提示词版本快照');
+    const dec = await interviews.decomposeProposal(ctx, cfg, iv.id);
+    assert.ok(dec.drafts.length >= 1, '拆出草稿');
+    assert.equal(dec.drafts[0].status, 'pending', '进闸门');
+    assert.equal(dec.drafts[0].fromProposal, true, '方案拆解来源标记');
+    assert.ok(dec.drafts[0].quote.includes('月度报表自动化'), 'quote=方案节选');
+    const noP = await interviews.decomposeProposal(ctx, cfg, interviews.createInterview(ctx, { sceneTitle: '无方案' }).id);
+    assert.equal(noP.error, 'NO_PROPOSAL', '无方案 409 语义');
+  } finally {
+    llm.chat = origChat;
+    fs2.rmSync(ctx.dataDir, { recursive: true, force: true });
+  }
+});
