@@ -1079,3 +1079,17 @@ async function importLearn() {
     toast(e.message, 'error');
   }
 }
+
+async function toggleAa() {
+  const root = rootEl;
+  if (!root) return;
+  const sw = root.querySelector('#aa-enabled');
+  const next = sw.getAttribute('aria-pressed') !== 'true';
+  try {
+    const r = await api('/api/settings', { method: 'PATCH', body: { agentActivity: { enabled: next } } });
+    drawAa(r && r.agentActivity ? r.agentActivity : { enabled: next });
+    toast(next ? '智能体观测已开启' : '智能体观测已关闭（六源停止读取）', 'success');
+  } catch (e) {
+    toast(e.message);
+  }
+}
