@@ -37,54 +37,7 @@ export async function render(el) {
         <div id="setup-body"><div class="loading">正在加载…</div></div>
       </div>
 
-      <div class="frow"><label>服务地址</label>
-        <div><input readonly id="set-addr"><div class="hint">仅回环绑定，host 不可改；port 改动需重启生效</div></div></div>
-      <div class="frow"><label>Gitea 地址</label>
-        <div><input id="set-base" placeholder="https://gitea.example.com"></div></div>
-      <div class="frow"><label>组织</label>
-        <div><input id="set-org" placeholder="example-org"></div></div>
-      <div class="frow"><label>API 前缀</label>
-        <div><input readonly id="set-prefix"></div></div>
-      <div class="frow"><label>轮询间隔（秒）</label>
-        <div><input id="set-poll" type="number" min="10" max="3600" step="1"></div></div>
-      <div class="frow"><label>无更新预警阈值（秒）</label>
-        <div><input id="set-warn" type="number" min="60" step="60"><div class="hint" id="set-warn-hint"></div></div></div>
-      <div class="frow"><label>无更新危险阈值（秒）</label>
-        <div><input id="set-danger" type="number" min="60" step="60"><div class="hint" id="set-danger-hint"></div></div></div>
-      <div class="frow"><label>host 白名单</label>
-        <div><input readonly id="set-whitelist" class="mono"></div></div>
-      <div class="frow"><label>凭据来源</label>
-        <div class="note" id="set-cred">${icon('lock')}加载中…</div></div>
-
-      <div class="set-card" id="cred-card">
-        <div class="sc-h">
-          <h4>${icon('terminal')}Gitea 凭据配置指引</h4>
-        </div>
-        <div class="desc">预授权头 = base64(用户名:令牌)，由你在 Gitea 个人设置生成；凭据本身不经过本页面、不落盘（红线），只在下方命令中自行替换后于你的终端执行一次。</div>
-        <div class="cred-cmd">
-          <pre class="mono" id="cred-cmd-text"></pre>
-          <button type="button" class="btn ghost xs" id="cred-copy">${icon('copy')}复制命令</button>
-        </div>
-        <div class="cred-actions">
-          <button type="button" class="btn ghost small" id="cred-test">${icon('zap')}测试连接</button>
-          <span class="note" id="cred-test-result"></span>
-        </div>
-      </div>
-
-      <div class="set-card" id="card-ignore">
-        <div class="sc-h"><h4>${icon('users')}成员册过滤</h4></div>
-        <div class="desc">Gitea 组织成员派生成员册时的忽略名单（管理员/机器账号等非干活账号）；名单内 login 不入成员册，大小写不敏感。保存设置时一并提交。</div>
-        <div class="frow"><label>忽略账号列表</label>
-          <div>
-            <div id="ignore-list" class="host-list"></div>
-            <div class="col-row host-add">
-              <input id="ignore-new" class="mono" placeholder="新增忽略账号，如 admin">
-              <button type="button" class="btn ghost xs add" id="ignore-add">${icon('plus')}添加</button>
-            </div>
-          </div></div>
-      </div>
-
-      <div class="set-card" id="card-github">
+<div class="set-card" id="card-github">
         <div class="sc-h"><h4>${icon('git-branch')}GitHub 动态源</h4></div>
         <div class="desc">接入 GitHub 事件流（commit/PR），与 Gitea 动态合流到同一活动词表——成果自动归因、日报预填、团队动态自动吃到。组织/个人账号均支持（v2.9.84）：组织=可含私库（需 PAT）；个人=仅公开活动（GitHub 平台限制）。保存即生效（随下个轮询周期），仅手改 config.json 才需重启。</div>
         <div class="frow"><label>启用</label>
@@ -116,6 +69,58 @@ export async function render(el) {
               <span class="note" id="gh-test-result"></span>
             </div>
             <div class="hint">按上方组织名/API 地址当前值探测（保存前可先试），拉 1 条最新事件验证链路</div>
+          </div></div>
+      </div>
+
+            <div class="set-card" id="card-gitea">
+        <div class="sc-h"><h4>${icon('terminal')}Gitea 动态源（可选 · 自建环境）</h4></div>
+        <div class="desc">开源版以 GitHub 为主（默认关闭轮询,横幅显示中性「未启用」）。自建 Gitea 的团队:填真实地址/组织,轮询间隔改回正数(如 60),并在凭据指引配置预授权头。</div>
+      <div class="frow"><label>服务地址</label>
+        <div><input readonly id="set-addr"><div class="hint">仅回环绑定，host 不可改；port 改动需重启生效</div></div></div>
+      <div class="frow"><label>Gitea 地址</label>
+        <div><input id="set-base" placeholder="https://gitea.example.com"></div></div>
+      <div class="frow"><label>组织</label>
+        <div><input id="set-org" placeholder="example-org"></div></div>
+      <div class="frow"><label>API 前缀</label>
+        <div><input readonly id="set-prefix"></div></div>
+      <div class="frow"><label>轮询间隔（秒）</label>
+        <div><input id="set-poll" type="number" min="0" max="3600" step="1"><div class="hint">0 = 关闭轮询（开源版默认,GitHub 为主）</div></div></div>
+      <div class="frow"><label>无更新预警阈值（秒）</label>
+        <div><input id="set-warn" type="number" min="60" step="60"><div class="hint" id="set-warn-hint"></div></div></div>
+      <div class="frow"><label>无更新危险阈值（秒）</label>
+        <div><input id="set-danger" type="number" min="60" step="60"><div class="hint" id="set-danger-hint"></div></div></div>
+      <div class="frow"><label>host 白名单</label>
+        <div><input readonly id="set-whitelist" class="mono"></div></div>
+      <div class="frow"><label>凭据来源</label>
+        <div class="note" id="set-cred">${icon('lock')}加载中…</div></div>
+
+            </div>
+
+<div class="set-card" id="cred-card">
+        <div class="sc-h">
+          <h4>${icon('terminal')}Gitea 凭据配置指引</h4>
+        </div>
+        <div class="desc">预授权头 = base64(用户名:令牌)，由你在 Gitea 个人设置生成；凭据本身不经过本页面、不落盘（红线），只在下方命令中自行替换后于你的终端执行一次。</div>
+        <div class="cred-cmd">
+          <pre class="mono" id="cred-cmd-text"></pre>
+          <button type="button" class="btn ghost xs" id="cred-copy">${icon('copy')}复制命令</button>
+        </div>
+        <div class="cred-actions">
+          <button type="button" class="btn ghost small" id="cred-test">${icon('zap')}测试连接</button>
+          <span class="note" id="cred-test-result"></span>
+        </div>
+      </div>
+
+      <div class="set-card" id="card-ignore">
+        <div class="sc-h"><h4>${icon('users')}成员册过滤</h4></div>
+        <div class="desc">Gitea 组织成员派生成员册时的忽略名单（管理员/机器账号等非干活账号）；名单内 login 不入成员册，大小写不敏感。保存设置时一并提交。</div>
+        <div class="frow"><label>忽略账号列表</label>
+          <div>
+            <div id="ignore-list" class="host-list"></div>
+            <div class="col-row host-add">
+              <input id="ignore-new" class="mono" placeholder="新增忽略账号，如 admin">
+              <button type="button" class="btn ghost xs add" id="ignore-add">${icon('plus')}添加</button>
+            </div>
           </div></div>
       </div>
 

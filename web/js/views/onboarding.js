@@ -96,10 +96,12 @@ export function openOnboarding() {
         <span class="muted small">${esc(detail || '')}</span>
       </div>`;
     host.innerHTML =
-      sources.map((s) => row(AGENT_LABEL[s.id] || s.id, s.ok, s.ok === true ? `${s.detail || '已检测到'}——点智能体页看它的会话` : s.ok === false ? '已安装但读不到会话（路径可配）' : '未检测到（装了就会亮）')).join('') +
-      row('团队 Git（Gitea）', giteaOff ? 'off' : giteaOk,
-        giteaOff ? '轮询已关闭（pollIntervalSec=0）——需要时把 config.json 里该项改回正数'
-          : giteaOk === true ? '已连接，提交会自动归因到任务' : giteaOk === false ? '未连接——设置页配置组织后生效' : '状态未知');
+      sources.map((s) => row(AGENT_LABEL[s.id] || s.id, s.ok, s.ok === true ? `${s.detail || '已检测到'}——点智能体页看它的会话` : s.ok === false ? '已安装但读不到会话（路径可配）' : '未检测到（装了就会亮）')).join('');
+    // v2.9.86 开源版 GitHub 为主：团队动态行点明接入路径（默认关闭轮询,Gitea 显示中性未接入）
+    host.insertAdjacentHTML('beforeend',
+      row('团队动态（GitHub / Gitea）', giteaOff ? 'off' : giteaOk,
+        giteaOff ? '默认未接入——设置页 GitHub 卡填用户名即点亮（开源版以 GitHub 为主）'
+          : giteaOk === true ? 'Gitea 已连接，提交会自动归因到任务' : giteaOk === false ? 'Gitea 已配置但未连通——检查地址/凭据' : '状态未知'));
     host.insertAdjacentHTML('beforeend',
       `<p class="muted small">检测到 ${okCount}/${sources.length} 个 agent 源。没装的不会报错，装了自动亮。</p>`);
     finish();
