@@ -221,7 +221,7 @@ test('路由级 GET /api/setup/check：200 + 六项齐全 + fixture 项如实 ok
         apiPrefix: '/api/v1',
         org: 'example-org',
         hostWhitelist: ['gitea.example.com'],
-        pollIntervalSec: 0,
+        pollIntervalSec: 60,
       },
       security: { allowedProtocols: ['https'] },
     })
@@ -257,5 +257,38 @@ test('路由级 GET /api/setup/check：200 + 六项齐全 + fixture 项如实 ok
   } finally {
     app.close();
     fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('路由级 GET /api/setup/check：轮询关闭 → gitea 项转中性可选（ok+optional，不亮红）', async () => {
+  const tmpDir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-setupcheck-off-'));
+  const configPath2 = path.join(tmpDir2, 'config.json');
+  fs.writeFileSync(
+    configPath2,
+    JSON.stringify({
+      port: 7788,
+      host: '127.0.0.1',
+      dataDir: 'data',
+      webDir: 'web',
+      gitea: {
+        baseUrl: 'https://gitea.example.com',
+        pollIntervalSec: 0,
+      },
+      security: { allowedProtocols: ['https'] },
+    })
+  );
+  const app2 = buildApp({ configPath: configPath2, poller: 'manual' });
+  try {
+    const r2 = await app2.fetch('GET', '/api/setup/check');
+    assert.equal(r2.status, 200);
+    const body2 = JSON.parse(r2.text);
+    const byId2 = {};
+    for (const i of body2.items) byId2[i.id] = i;
+    assert.equal(byId2.gitea.ok, true, '轮询关闭 → 中性 ok（不亮红）');
+    assert.equal(byId2.gitea.optional, true, 'optional 标记（不卡 allOk）');
+    assert.ok(byId2.gitea.detail.includes('未接入'), 'detail 明示未接入');
+  } finally {
+    app2.close();
+    fs.rmSync(tmpDir2, { recursive: true, force: true });
   }
 });
