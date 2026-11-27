@@ -171,7 +171,10 @@ test('probeLlmRoute：DSH_HOME 指向无路由目录时，仍扫真实 ~/.dsh—
     '    model: glm-5.3-flash',
   ].join('\n');
   const routeFile = path.join(realHome, 'profiles', 'headless', 'cordis.patch.yml');
-  // Act：envHome 全空；~/.dsh 的 headless profile 有业主配的路由
+  const desktopFile = path.join(realHome, 'profiles', 'desktop', 'cordis.patch.yml');
+  const desktopYml = ['- id: agent-default-model', '  config:', '    provider: deepseek-account', '    model: deepseek-flash'].join('\n');
+  // Act：envHome 全空；~/.dsh 的 headless profile 有业主配的路由,desktop 还有另一份——
+  // 工作台 AI 固定 spawn headless,体检必须优先报 headless 的(它才是真正消耗额度的路由)
   const r = probeLlmRoute(
     {},
     {
@@ -181,13 +184,14 @@ test('probeLlmRoute：DSH_HOME 指向无路由目录时，仍扫真实 ~/.dsh—
       profile: 'headless',
       readFileSync: (p) => {
         if (p === routeFile) return routeYml;
+        if (p === desktopFile) return desktopYml;
         throw new Error(`unexpected read: ${p}`);
       },
     }
   );
   // Assert
   assert.strictEqual(r.ok, true, '体检认出 ~/.dsh 里业主配的路由');
-  assert.match(r.detail, /zai-coding-cn \/ glm-5.3-flash/);
+  assert.match(r.detail, /zai-coding-cn \/ glm-5.3-flash/, '优先报 headless(工作台 AI 实际用的),不报 desktop 的另一份');
   assert.ok(r.detail.includes(realHome), 'detail 注明路由来自哪个目录');
 
   // 两处都没有 → 失败，且如实列出扫过的目录
