@@ -86,13 +86,18 @@ function renderMain(opts = {}) {
     <div class="rs-msgs" id="rs-msgs">
       ${msgs.length ? msgs.map((m) => `
         <div class="rs-msg rs-msg-${esc(m.role)}${m.kind !== 'normal' ? ' rs-msg-kind' : ''}">
-          <span class="muted small">${esc(m.role)}${m.kind !== 'normal' ? ` · ${esc(m.kind)}` : ''} · ${esc(String(m.ts || '').slice(0, 19).replace('T', ' '))}</span>
+          <span class="muted small">${m.role === 'client' ? '客户' : m.role === 'AI' ? 'AI 调研顾问' : esc(m.role)}${m.kind !== 'normal' ? ` · ${esc(m.kind)}` : ''} · ${esc(String(m.ts || '').slice(0, 19).replace('T', ' '))}</span>
           <div class="rs-msg-body">${esc(m.text)}</div>
-        </div>`).join('') : '<div class="muted small">还没有发言——在下方输入第一句(建议覆盖:谁在做/怎么做/为什么/输入输出与交接方)</div>'}
+        </div>`).join('') : '<div class="muted small">还没有发言——我是 AI 调研顾问,直接说说你的业务现状,我来帮你梳理(支持语音/附件)</div>'}
+      ${(iv.attachments || []).length ? `<div class="rs-att-chips">${iv.attachments.map((a) => `<span class="chip tiny" title="${esc(a.name)} · ${a.bytes}B">${icon('paperclip')} ${esc(a.name)}</span>`).join('')}</div>` : ''}
     </div>
     ${iv.status === 'open' ? `
+    <div class="rs-atts" id="rs-atts"></div>
     <div class="rs-input">
-      <textarea id="rs-text" rows="2" placeholder="记录客户/业务的原话…(建议覆盖:谁在做/怎么做/为什么/输入输出与交接方)"></textarea>
+      <button type="button" class="rs-icon-btn" id="rs-mic" title="语音输入(浏览器识别)" hidden>${icon('mic')}</button>
+      <button type="button" class="rs-icon-btn" id="rs-paperclip" title="上传附件(需求文档/模板)">${icon('paperclip')}</button>
+      <input type="file" id="rs-file" multiple hidden />
+      <textarea id="rs-text" rows="2" placeholder="直接和 AI 调研顾问说说你的业务…(支持语音/附件)"></textarea>
       <button type="button" class="btn" id="rs-send">${icon('zap')} 发送</button>
     </div>` : ''}
     <div class="rs-drafts">
@@ -159,6 +164,58 @@ function wireMain(opts = {}) {
       await openDetail(state.selectedId, { silent: true });
     } catch (e) { toast(e.message); dec.disabled = false; }
   });
+  // v2.9.91 语音输入(Web Speech API,浏览器原生;不支持时隐藏麦克风)
+  const mic = main.querySelector('#rs-mic');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (mic && !SR) mic.hidden = true;
+  if (mic && SR) {
+    let recog = null;
+    mic.addEventListener('click', () => {
+      if (recog) { recog.stop(); return; }
+      const r = new SR();
+      r.lang = 'zh-CN';
+      r.interimResults = true;
+      const base = text ? text.value : '';
+      r.onresult = (ev) => {
+        let finalText = '';
+        let interim = '';
+        for (const res of ev.results) {
+          if (res.isFinal) finalText += res[0].transcript;
+          else interim += res[0].transcript;
+        }
+        if (text) text.value = (base ? base + ' ' : '') + finalText + interim;
+      };
+      r.onend = () => { recog = null; mic.classList.remove('recording'); };
+      r.onerror = () => { recog = null; mic.classList.remove('recording'); toast('语音识别失败,请用键盘输入'); };
+      recog = r;
+      mic.classList.add('recording');
+      mic.title = '录音中…点击停止';
+      r.start();
+    });
+  }
+  // v2.9.91 附件上传:选择即传(base64 JSON),成功后显示芯片;发送时附件已在库
+  const clip = main.querySelector('#rs-paperclip');
+  const fileInput = main.querySelector('#rs-file');
+  if (clip && fileInput) {
+    clip.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      for (const f of fileInput.files) {
+        if (f.size > 8 * 1024 * 1024) { toast(`附件 ${f.name} 超过 8MB 上限`, 'error'); continue; }
+        try {
+          const b64 = await new Promise((resolve, reject) => {
+            const rd = new FileReader();
+            rd.onload = () => resolve(String(rd.result).split(',')[1] || '');
+            rd.onerror = () => reject(new Error('读取失败'));
+            rd.readAsDataURL(f);
+          });
+          await apiPost(`/api/research/interviews/${state.selectedId}/attachments`, { name: f.name, dataBase64: b64 });
+          toast(`附件 ${f.name} 已上传`);
+        } catch (e) { toast(`附件 ${f.name} 上传失败: ${e.message}`); }
+      }
+      fileInput.value = '';
+      await openDetail(state.selectedId, { silent: true });
+    });
+  }
   const doExport = async (format) => {
     const iv = (state.detail && state.detail.interview) || {};
     try {
