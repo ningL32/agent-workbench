@@ -65,10 +65,16 @@ function renderDraftsLeft() {
     box.innerHTML = '';
     return;
   }
+  // v2.9.93 折叠:业主反馈左栏闸门占屏——点击头部折叠/展开,localStorage 跨刷新记忆
+  let folded = false;
+  try { folded = localStorage.getItem('fde-research-draft-folded') === '1'; } catch { /* 无 localStorage 忽略 */ }
   const pending = drafts.filter((x) => x.status === 'pending');
   const decided = drafts.filter((x) => x.status !== 'pending');
   let html = `
-    <div class="rs-left-h">${icon('inbox')} 任务草稿闸门(${drafts.length})</div>
+    <button type="button" class="rs-left-h rs-fold-toggle" id="rs-draft-fold" aria-expanded="${folded ? 'false' : 'true'}" style="width:100%;text-align:left;cursor:pointer;background:none;border:none;color:inherit">
+      ${icon('inbox')} 任务草稿闸门(${drafts.length}) <span class="muted small">${pending.length} 待确认</span> <span style="float:right;transform:rotate(${folded ? '-90deg' : '0deg'})">${icon('chevron-down')}</span>
+    </button>
+    <div id="rs-draft-body" ${folded ? 'hidden' : ''}>
     ${pending.length ? pending.map((dr) => `
       <div class="rs-draft" data-id="${esc(dr.id)}">
         <input type="text" class="d-title" value="${esc(dr.payload.title)}" />
@@ -89,7 +95,15 @@ function renderDraftsLeft() {
         <b>${esc(dr.payload.title)}</b> <span class="muted small">${esc(dr.status)}${dr.taskId ? ` · ${esc(dr.taskId)}` : ''}</span>
       </div>`).join('');
   }
+  html += '</div>';
   box.innerHTML = html;
+  const foldBtn = box.querySelector('#rs-draft-fold');
+  if (foldBtn) foldBtn.addEventListener('click', () => {
+    const body = box.querySelector('#rs-draft-body');
+    if (body) body.hidden = !body.hidden;
+    foldBtn.setAttribute('aria-expanded', String(body.hidden === false));
+    try { localStorage.setItem('fde-research-draft-folded', body.hidden ? '1' : '0'); } catch { /* 忽略 */ }
+  });
   wireDrafts(box);
 }
 
