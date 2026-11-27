@@ -1,11 +1,14 @@
-// research.js — 调研视图（v2.9.92 布局改版,业主拍板）：
-//   流程:新建访谈 → 访谈对话 → AI 识别分析自动产出方案(md) → 方案拆解任务 → 闸门 accept。
-//   三区:场景列表 + 草稿闸门内嵌(左栏,业主拍板「草稿进左栏」) | 访谈工作面(中间列纯对话) | 方案面板(右栏)。
+// research.js — 调研视图（v2.9.92 布局改版,业主拍板；v2.9.94 加访谈出口）：
+//   流程:新建访谈 → 访谈对话(每轮更新「访谈出口」缺口清单) → 缺口闸门 → AI 产出方案(范围合同:做/不做/验收) → 方案拆解任务 → 闸门 accept。
+//   三区:场景列表 + 草稿闸门内嵌(左栏,业主拍板「草稿进左栏」) | 访谈工作面(中间列纯对话) | 访谈出口 + 方案面板(右栏)。
 import { apiGet, apiPost } from '../api.js';
 import { esc, toast, icon, openModal } from '../ui.js';
 
 let rootEl = null;
 let state = { interviews: [], selectedId: null, detail: null };
+
+/** 方案区的引导文案:没有方案时显示(切换访谈后也要恢复成它,不能残留上一场的方案) */
+const PROPOSAL_GUIDE = '访谈出口的缺口处理完后点「生成方案」——AI 通读对话与系统核对过的发现产物,产出方案(做 / 不做 / 验收),并可一键拆解为任务草稿。仍有未处理的缺口时会先提示你确认。';
 
 export async function render(el) {
   rootEl = el;
@@ -18,8 +21,9 @@ export async function render(el) {
       </div>
       <div class="rs-main" id="rs-main"><div class="empty-state">选择或新建一个访谈场景</div></div>
       <div class="rs-right">
-        <div class="rs-left-h">${icon('file-text')} 方案（AI 识别分析自动产出）</div>
-        <div id="rs-proposal" class="muted small">访谈内容足够后点「生成方案」——AI 通读对话产出结构化方案文档(md),并可一键拆解为任务草稿</div>
+        <div id="rs-exit"></div>
+        <div class="rs-left-h">${icon('file-text')} 方案 · 范围合同</div>
+        <div id="rs-proposal" class="muted small">${PROPOSAL_GUIDE}</div>
       </div>
     </div>`;
   el.querySelector('#rs-new').addEventListener('click', onNew);
@@ -47,7 +51,7 @@ function renderScenes() {
     .map((i) => `
       <button type="button" class="rs-scene${i.id === state.selectedId ? ' active' : ''}" data-id="${esc(i.id)}">
         <b>${esc(i.sceneTitle)}</b>
-        <span class="muted small">${esc(i.projectDir || '未绑定项目')} · ${esc(i.status)}${i.pendingDrafts ? ` · 草稿 ${i.pendingDrafts}` : ''}${i.hasProposal ? ' · 方案 ✓' : ''}</span>
+        <span class="muted small">${esc(i.projectDir || '未绑定项目')} · ${esc(i.status)}${i.pendingDrafts ? ` · 草稿 ${i.pendingDrafts}` : ''}${i.hasProposal ? ' · 方案 ✓' : ''}${i.openGaps ? ` · 缺口 ${i.openGaps}` : ''}</span>
       </button>`)
     .join('');
   box.querySelectorAll('.rs-scene').forEach((b) =>
@@ -148,6 +152,7 @@ async function openDetail(id, opts = {}) {
   renderScenes();
   renderDraftsLeft();
   renderMain(opts);
+  renderExitPanel();
   renderProposalPanel();
 }
 
@@ -162,7 +167,7 @@ function renderMain(opts = {}) {
       <b>${esc(iv.sceneTitle || '')}</b>
       <span class="muted small">${esc(iv.projectDir || '未绑定项目')} · ${esc(iv.status)}</span>
       ${iv.status === 'open' ? `<button type="button" class="btn btn-sm" id="rs-close">${icon('x')} 关闭访谈</button>` : ''}
-      <button type="button" class="btn btn-sm" id="rs-gen-proposal" ${state.generating ? 'disabled' : ''}>${icon('zap')}${state.generating ? '生成中…(1-3分钟)' : '生成方案'}</button>
+      <button type="button" class="btn btn-sm" id="rs-gen-proposal" ${state.generating ? 'disabled' : ''}>${icon('zap')}${state.generating ? '生成中…(约 2-4 分钟)' : '生成方案'}</button>
       <button type="button" class="btn btn-sm" id="rs-decompose">${icon('kanban')} 方案拆解任务</button>
       <button type="button" class="btn btn-sm" id="rs-exp-report">${icon('file-text')} 交付报告</button>
       <button type="button" class="btn btn-sm" id="rs-exp-bpmn">${icon('git-branch')} BPMN</button>
@@ -302,15 +307,7 @@ function wireMain(opts = {}) {
     try { await apiPost(`/api/research/interviews/${state.selectedId}/close`, {}); await refresh(); } catch (e) { toast(e.message); }
   });
   const gen = main.querySelector('#rs-gen-proposal');
-  if (gen) gen.addEventListener('click', async () => {
-    gen.disabled = true;
-    gen.textContent = '生成中…(1-3分钟)';
-    try {
-      await apiPost(`/api/research/interviews/${state.selectedId}/proposal`, {});
-      toast('方案已产出(右栏)');
-      await openDetail(state.selectedId, { silent: true });
-    } catch (e) { toast(e.message); gen.disabled = false; }
-  });
+  if (gen) gen.addEventListener('click', () => requestProposal(gen, false));
   const dec = main.querySelector('#rs-decompose');
   if (dec) dec.addEventListener('click', async () => {
     dec.disabled = true;
@@ -379,13 +376,210 @@ function wireMain(opts = {}) {
   });
 }
 
+/**
+ * 访谈出口面板(v2.9.94):系统维护的缺口清单——业务环节×四问、干系人、基线、关键假设。
+ * 每一项都标着:已有客户原话 / 未问 / 依据核对不上 / 客户暂给不出。
+ * 数据全部来自后端(detail.gate:AI 只负责摘录原话,由代码与对话原文逐字核对后判定),前端只负责展示。
+ */
+const COV_GROUP_TITLE = { step: '业务环节 × 四问', stakeholder: '干系人', baseline: '基线(当前做法的数字)', assumption: '关键假设' };
+const COV_MARK = { answered: '✓', confirmed: '✓', unavailable: '—', unverified: '⚠', missing: '○', open: '○', denied: '✕' };
+
+/** 一行检查项。文字之外必须有图标与状态词——不能只靠颜色区分(未问 / 核对不上 / 暂给不出)。 */
+function covRow(item, label) {
+  const st = item.status;
+  const cls = st === 'answered' || st === 'confirmed' ? 'is-ok'
+    : st === 'unavailable' ? 'is-na'
+      : st === 'unverified' ? 'is-unverified'
+        : st === 'denied' ? 'is-denied' : 'is-open';
+  let text = '<span class="muted">未问</span>';
+  let title = '还没有问到';
+  if ((st === 'answered' || st === 'confirmed') && item.group === 'baseline') {
+    text = `<b>${esc(item.value || '—')}</b> <span class="rs-cov-tag${item.estimated ? ' is-est' : ''}">${item.estimated ? '估算' : '实测'}</span> <span class="rs-cov-quote">${esc(item.quote)}</span>`;
+    title = item.estimated ? '客户口述的估计值(非实测)' : '来自统计或记录的实测值';
+  } else if (st === 'answered' || st === 'confirmed') {
+    text = `<span class="rs-cov-quote">${esc(item.quote)}</span>`;
+    title = item.group === 'assumption' ? '客户亲口确认了这个假设' : '客户原话(已与对话逐字核对)';
+  } else if (st === 'unavailable') {
+    text = `<span class="muted">${item.group === 'assumption' ? '客户暂无法确认' : '暂给不出'}</span> <span class="rs-cov-quote">${esc(item.quote)}</span>`;
+    title = '客户明确表示给不出——不算缺口,但生成方案时会如实写进「风险与前提」';
+  } else if (st === 'unverified') {
+    text = `<span class="rs-cov-warn">${item.group === 'assumption' ? '待客户确认(摘录未核对上)' : '依据未核对上'}</span> <span class="rs-cov-quote">${esc(item.quote)}</span>`;
+    title = 'AI 摘录的这句话在客户发言里找不到,不算已确认;下一轮 AI 会重新摘录。你也可以直接把这个情况再说一遍';
+  } else if (st === 'denied') {
+    text = `<span class="rs-cov-warn">客户否认</span> <span class="rs-cov-quote">${esc(item.quote)}</span>`;
+    title = '客户明确否认了这个假设';
+  } else if (item.group === 'assumption') {
+    text = '<span class="muted">待客户确认</span>';
+    title = 'AI 注意到的前提,客户还没有确认';
+  }
+  return `<div class="rs-cov-row ${cls}" title="${esc(title)}"><span class="rs-cov-mark" aria-hidden="true">${COV_MARK[st] || '○'}</span><span class="rs-cov-label">${esc(label)}</span><span class="rs-cov-text">${text}</span></div>`;
+}
+
+function renderExitGroups(items) {
+  const byGroup = {};
+  for (const it of items) (byGroup[it.group] = byGroup[it.group] || []).push(it);
+  const out = [];
+  for (const g of ['step', 'stakeholder', 'baseline', 'assumption']) {
+    const list = byGroup[g] || [];
+    out.push(`<div class="rs-cov-group"><div class="rs-cov-group-h">${COV_GROUP_TITLE[g]}</div>`);
+    if (!list.length) {
+      // 环节/假设是动态的,可能确实还没有;干系人/基线的槽位恒在,不会走到这里
+      out.push(`<div class="muted small rs-cov-empty">${g === 'step' ? '尚未识别业务环节' : '暂无'}</div>`);
+    } else if (g === 'step') {
+      let cur = null;
+      for (const it of list) {
+        const m = /^环节「(.+?)」·(.+)$/.exec(it.label);
+        if (!m) continue;
+        if (m[1] !== cur) { cur = m[1]; out.push(`<div class="rs-cov-step">${esc(cur)}</div>`); }
+        out.push(covRow(it, m[2]));
+      }
+    } else {
+      for (const it of list) out.push(covRow(it, g === 'assumption' ? it.text : it.label));
+    }
+    out.push('</div>');
+  }
+  return out.join('');
+}
+
+function renderExitPanel() {
+  const el = rootEl && rootEl.querySelector('#rs-exit');
+  if (!el) return;
+  const d = state.detail || {};
+  const iv = d.interview || null;
+  const gate = d.gate || null;
+  if (!iv || !gate) { el.innerHTML = ''; return; }
+  const cov = iv.contextMeta && iv.contextMeta.coverage;
+  const hasProp = !!(iv.proposal && iv.proposal.md);
+  // 折叠:用户点过就记住;没点过时,有方案就默认收起,把空间让给方案
+  let folded = null;
+  try {
+    const v = localStorage.getItem('fde-research-exit-folded');
+    if (v === '1' || v === '0') folded = v === '1';
+  } catch { /* 无 localStorage 忽略 */ }
+  if (folded === null) folded = hasProp;
+  const c = gate.counts;
+  const pct = gate.assessed && c.total ? Math.round(((c.answered + c.unavailable) / c.total) * 100) : 0;
+  const clientRows = (d.messages || []).filter((m) => m.role === 'client' && m.kind === 'normal').length;
+  const stale = gate.assessed && cov && Number.isInteger(cov.turns) && cov.turns < clientRows;
+  let body = '<div class="muted small" style="padding:6px 0 2px">还没有缺口清单。发送一条消息后,AI 会开始逐项记录,并附上你的原话。</div>';
+  if (gate.assessed) {
+    body = renderExitGroups(gate.items)
+      + (stale ? `<div class="rs-cov-note">${icon('alert-triangle')} <span>清单截至第 ${cov.turns} 条发言(最新一条尚未计入,再发一条消息即可更新)</span></div>` : '')
+      + (cov && cov.truncated ? `<div class="rs-cov-note">${icon('alert-triangle')} <span>上一轮有摘录没能完成近似核对,已按「未核对」处理</span></div>` : '');
+  }
+  el.innerHTML = `
+    <section class="rs-exit" aria-label="访谈出口">
+      <button type="button" class="rs-exit-h" id="rs-exit-fold" aria-expanded="${!folded}">
+        ${icon('check-circle')} <b>访谈出口</b>
+        <span class="rs-exit-counts muted small">${gate.assessed
+          ? `已确认 ${c.answered} · 暂给不出 ${c.unavailable} · <b class="${c.open ? 'rs-cov-open-n' : ''}">缺口 ${c.open}</b>`
+          : '未评估'}</span>
+        <span class="spacer"></span>
+        <span class="rs-exit-chev">${icon('chevron-down')}</span>
+      </button>
+      ${gate.assessed ? `<div class="rs-exit-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="访谈出口完成度"><i style="width:${pct}%"></i></div>` : ''}
+      <div class="rs-exit-body" ${folded ? 'hidden' : ''}>${body}</div>
+    </section>`;
+  el.querySelector('.rs-exit-chev').style.transform = `rotate(${folded ? '-90deg' : '0deg'})`;
+  el.querySelector('#rs-exit-fold').addEventListener('click', () => {
+    const b = el.querySelector('.rs-exit-body');
+    const nowFolded = !b.hidden;
+    b.hidden = nowFolded;
+    el.querySelector('#rs-exit-fold').setAttribute('aria-expanded', String(!nowFolded));
+    el.querySelector('.rs-exit-chev').style.transform = `rotate(${nowFolded ? '-90deg' : '0deg'})`;
+    try { localStorage.setItem('fde-research-exit-folded', nowFolded ? '1' : '0'); } catch { /* 忽略 */ }
+  });
+}
+
+/**
+ * 生成方案(v2.9.94):闸门在后端。还有未处理的缺口时,后端回 409 GAPS_OPEN 且不花模型调用——
+ * 这里刷新详情(拿到最新的缺口清单)并弹窗让用户选「回去补缺口」或「仍然生成方案」。
+ */
+async function requestProposal(btn, force) {
+  const id = state.selectedId;
+  const label = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = '生成中…(约 2-4 分钟)';
+  try {
+    await apiPost(`/api/research/interviews/${id}/proposal`, force ? { force: true } : {});
+    toast(force ? '方案已产出(带着未处理的缺口,见右栏提示)' : '方案已产出(右栏)');
+    await openDetail(id, { silent: true });
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = label;
+    if (e && e.code === 'GAPS_OPEN') {
+      await openDetail(id, { silent: true }); // 主区域会重画(按钮恢复可用),再弹确认
+      showGateDialog();
+      return;
+    }
+    toast(e.message);
+  }
+}
+
+/** 闸门确认弹窗:列出未处理的缺口,说明继续生成的后果;「仍然生成」带 force 重发,并由后端在方案上留痕 */
+function showGateDialog() {
+  const gate = (state.detail && state.detail.gate) || { open: [], unavailable: [] };
+  const open = gate.open || [];
+  const show = open.slice(0, 12);
+  const box = document.createElement('div');
+  box.innerHTML = `
+    <p>访谈还有 <b>${open.length}</b> 项缺口未处理。现在生成的话,方案只能在「风险与前提」里把它们写成待确认项,验收指标也会缺少对比基线。</p>
+    <ul class="rs-gate-list">
+      ${show.map((g) => `<li><span class="rs-cov-mark ${g.status === 'unverified' ? 'is-unverified' : ''}" aria-hidden="true">${g.status === 'unverified' ? '⚠' : '○'}</span><span>${esc(g.label)}</span> <span class="muted small">${g.status === 'unverified' ? '依据未核对上' : g.group === 'assumption' ? '待客户确认' : '未问'}</span></li>`).join('')}
+    </ul>
+    ${open.length > show.length ? `<p class="muted small">等 ${open.length} 项(完整清单见右栏「访谈出口」)</p>` : ''}
+    <p class="muted small">「客户暂给不出」的 ${(gate.unavailable || []).length} 项不算缺口,会如实写进方案。</p>`;
+  const actions = document.createElement('div');
+  actions.className = 'rs-gate-actions';
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'btn btn-sm';
+  back.textContent = '回去补缺口';
+  const go = document.createElement('button');
+  go.type = 'button';
+  go.className = 'btn btn-sm';
+  go.textContent = '仍然生成方案';
+  const modal = openModal({ title: '生成方案前:还有未处理的缺口', body: box });
+  back.addEventListener('click', () => {
+    modal.close();
+    const inp = rootEl.querySelector('#rs-text');
+    if (inp) inp.focus();
+  });
+  go.addEventListener('click', () => {
+    modal.close();
+    const btn = rootEl.querySelector('#rs-gen-proposal');
+    if (btn) requestProposal(btn, true);
+  });
+  actions.append(back, ' ', go);
+  box.appendChild(actions);
+}
+
 function renderProposalPanel() {
   const el = rootEl.querySelector('#rs-proposal');
   if (!el) return;
   const prop = (state.detail && state.detail.interview && state.detail.interview.proposal) || null;
-  if (!prop || !prop.md) return; // 保持初始引导文案
+  if (!prop || !prop.md) {
+    // 没有方案就恢复引导文案。原先在这里直接 return:从"有方案的访谈"切到"没有方案的访谈"时,
+    // 右栏会残留上一场的方案(现在还带着"生成时有 N 项缺口"的留痕,更容易误导)。
+    el.textContent = PROPOSAL_GUIDE;
+    return;
+  }
+  // 闸门留痕 + 范围合同完整性(都是后端判定,这里只如实显示)
+  const g = prop.gate;
+  const notes = [];
+  if (g && g.assessed === false) {
+    notes.push(`<div class="rs-prop-note is-warn">${icon('alert-triangle')} <span>生成时缺口清单未评估:基线、干系人、假设都没有经过核对,请重点看「风险与前提」</span></div>`);
+  } else if (g && g.open > 0) {
+    notes.push(`<div class="rs-prop-note is-warn" title="${esc((g.openItems || []).map((x) => x.label).join('、'))}">${icon('alert-triangle')} <span>生成时有 ${g.open} 项缺口未处理${g.forced ? '(你确认后仍然生成)' : ''},已写入「风险与前提」</span></div>`);
+  } else if (g) {
+    notes.push(`<div class="rs-prop-note is-ok">${icon('check-circle')} <span>生成时访谈出口没有未处理的缺口${g.unavailable ? `;${g.unavailable} 项客户暂给不出` : ''}</span></div>`);
+  }
+  if (Array.isArray(prop.missingSections) && prop.missingSections.length) {
+    notes.push(`<div class="rs-prop-note is-bad">${icon('alert-triangle')} <span>方案缺少章节:${prop.missingSections.map(esc).join('、')}——没按范围合同模板输出,建议点「生成方案」重试</span></div>`);
+  }
   el.innerHTML = `
     <div class="rs-prop-meta muted small">${esc(String(prop.generatedAt).slice(0, 19).replace('T', ' '))} · ${esc(prop.channel || '')}${prop.promptVersion ? ` · 提示词 v${esc(prop.promptVersion)}` : ''}</div>
+    ${notes.join('')}
     <pre class="rs-prop-md">${esc(prop.md)}</pre>
     <div class="rs-prop-actions">
       <button type="button" class="btn btn-sm" id="rs-prop-copy">${icon('copy')} 复制 md</button>

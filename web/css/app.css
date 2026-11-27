@@ -1561,3 +1561,42 @@ a.diary-src:hover { text-decoration: underline; }
 .rs-flow-svg svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
 .rs-flow-svg g { cursor: pointer; }
 .rs-flow-svg g:hover rect { filter: brightness(1.25); }
+
+/* ---- v2.9.94:访谈出口(缺口清单)面板 + 方案的闸门留痕 ---- */
+.rs-right { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
+.rs-exit { border: 1px solid var(--border); border-radius: 10px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
+.rs-exit-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; width: 100%; padding: 8px 10px; background: none; border: none; color: inherit; cursor: pointer; text-align: left; font-size: 13px; }
+.rs-exit-h .spacer { flex: 1; }
+.rs-exit-counts { white-space: nowrap; }
+.rs-exit-counts b { color: var(--text); }
+.rs-exit-counts .rs-cov-open-n { color: var(--yellow); }
+.rs-exit-chev { display: inline-flex; color: var(--muted); transition: transform .15s; }
+.rs-exit-bar { height: 3px; margin: 0 10px; border-radius: 2px; background: rgba(255,255,255,.06); overflow: hidden; }
+.rs-exit-bar i { display: block; height: 100%; background: var(--green); transition: width .3s; }
+.rs-exit-body { max-height: 46vh; padding: 4px 10px 10px; overflow: auto; }
+.rs-cov-group { margin-top: 6px; }
+.rs-cov-group-h { margin: 4px 0 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.rs-cov-step { padding: 4px 0 2px 20px; font-size: 12px; font-weight: 600; }
+.rs-cov-empty { padding: 2px 0 4px 20px; }
+.rs-cov-row { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; font-size: 12px; line-height: 1.45; }
+.rs-cov-mark { flex: 0 0 14px; text-align: center; font-weight: 700; }
+.rs-cov-label { flex: 0 0 auto; color: var(--muted); }
+.rs-cov-text { min-width: 0; overflow-wrap: anywhere; }
+.rs-cov-quote { opacity: .92; }
+.rs-cov-row.is-ok .rs-cov-mark { color: var(--green); }
+.rs-cov-row.is-open { color: var(--muted); }
+.rs-cov-row.is-na { color: var(--muted); }
+.rs-cov-row.is-unverified .rs-cov-mark, .rs-cov-warn { color: var(--yellow); }
+.rs-cov-row.is-denied .rs-cov-mark { color: var(--red); }
+.rs-cov-tag { display: inline-block; padding: 0 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; color: var(--muted); }
+.rs-cov-tag.is-est { border-color: currentColor; color: var(--yellow); }
+.rs-cov-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--yellow); }
+.rs-cov-note .ic, .rs-prop-note .ic { flex: 0 0 13px; width: 13px; height: 13px; margin-top: 2px; }
+.rs-gate-list { max-height: 260px; margin: 8px 0; padding: 0; overflow: auto; list-style: none; }
+.rs-gate-list li { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; font-size: 13px; }
+.rs-gate-list .rs-cov-mark.is-unverified { color: var(--yellow); }
+.rs-gate-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.rs-prop-note { display: flex; align-items: flex-start; gap: 6px; margin: 6px 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
+.rs-prop-note.is-warn { color: var(--yellow); }
+.rs-prop-note.is-bad { color: var(--red); }
+.rs-prop-note.is-ok { color: var(--green); }

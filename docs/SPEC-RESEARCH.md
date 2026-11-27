@@ -1,6 +1,6 @@
 # Super Workbench 调研模块规格（docs/SPEC-RESEARCH.md）
 
-> 版本 1.1.0 · 2026-11-23 · v1.1:accept 改两阶段(accept 翻转+人工修订 payload → 前端以既有 POST /api/tasks 单写路径建任务 → /link 绑回+research 事件;不复制第二条任务写路径) · 依据：业主拍板「场景调研能力原生重写进工作台」（参考实现 <reference-impl> 已竣工审核通过，对等移植）· 设计经薛定谔审计（7 项决议见 §8，均为约束性契约）
+> 版本 1.2.0 · 2026-11-27 · v1.2:**访谈出口做实 + 方案改范围合同**(业主拍板的两个 P0,源自 FDE 八步法对照) · v1.1:accept 改两阶段(accept 翻转+人工修订 payload → 前端以既有 POST /api/tasks 单写路径建任务 → /link 绑回+research 事件;不复制第二条任务写路径) · 依据：业主拍板「场景调研能力原生重写进工作台」（参考实现 <reference-impl> 已竣工审核通过，对等移植）· 设计经薛定谔审计（7 项决议见 §8，均为约束性契约）
 > 硬约束沿 AGENTS.md：零 npm 依赖、零构建、凭据零落盘、AI 永不直写、失败必须留痕
 > 定位一句话：调研 = 任务漏斗第三入口 + 唯一"工作面"视图；与交付侧构成三条闭环（§2）
 
@@ -46,9 +46,13 @@
 ```
 POST   /api/research/interviews                 {projectDir?, sceneTitle}
 GET    /api/research/interviews                 列表(按场景分组,含 pending 草稿计数)
-GET    /api/research/interviews/:id             详情(messages + 缺口清单 + drafts)
-POST   /api/research/interviews/:id/messages    {text} → AI 回复(通道路由)+草稿产出
+POST   /api/research/interviews/:id/messages    {text} → AI 回复(通道路由)+草稿产出+coverage 并入清单
+GET    /api/research/interviews/:id             详情(messages + drafts + gate 闸门结论:items/open/unavailable/counts)
+GET    /api/research/interviews                 列表(按场景分组,含 pending 草稿计数 + openGaps 未处理缺口数,未评估=null)
 POST   /api/research/interviews/:id/close       关闭访谈(停入站,未决草稿保持 pending 可独立处置)
+POST   /api/research/interviews/:id/proposal    生成方案(范围合同七节)。未处理缺口>0 且不带 {force:true} → 409 GAPS_OPEN+gate;
+                                                force 生成时把 gate(assessed/open/unavailable/forced/openItems)与
+                                                missingSections(缺章,checkProposalSections)留在 proposal 上留痕
 POST   /api/research/drafts/:id/accept          {payload?人工修订} → 校验+翻转 pending→accepted(409 pending 守卫);返回 payload 供前端经既有 POST /api/tasks 建任务
 POST   /api/research/drafts/:id/link            {taskId} → 绑回草稿+task_events(research,quote 留痕)
 POST   /api/research/drafts/:id/reject          {reason} 留痕
@@ -75,6 +79,7 @@ accept 失败语义：400 FIELD_INVALID 带原因（草稿留 pending）；409 A
 5. **通道可观测**：AI 行记 llm_channel+model_id，纸面显式留痕
 6. **失败留痕**：LLM 解析失败落 system/parse_error 行（红线 8 延伸）
 7. **闭环 C 输入纯度**：客户产物只吃人工确认面数据，启发式归因禁入
+8. **访谈出口·代码当裁判**（v1.2）：模型每轮随回复带回 coverage(检查项→客户原话摘录)，系统把每句摘录与对话原文逐字核对（近似匹配覆盖全部语料，带整轮计算预算），核对不上不算已确认；已有依据的项不因模型漏输出而退回；「客户暂给不出」必须有客户亲口说的原话。语料 = 客户发言 + 附件正文，**AI 自己的话不算依据**。
 
 ## 9. 分期验收（每批走版本纪律+全量测试绿）
 
