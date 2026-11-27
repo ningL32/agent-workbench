@@ -22,7 +22,12 @@ const { execFileSync } = require('node:child_process');
 const githubClient = require('../lib/githubClient.js');
 
 const describe = githubClient.describeCredential;
-const SECRET = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+// 合成令牌:够长(让「不含 ≥5 字符连续片段」的泄露检查有意义)、尾 4 位可辨认。两点约束:
+// ① 刻意不用 ghp_ 前缀 + 30 位以上的真实形态——那会命中 public-hygiene 的 H4(凭据形态零豁免);
+//    被测逻辑(scheme 解析/尾位/缓存)不依赖前缀。
+// ② 不含输出固定词表里的任何 ≥5 字符片段(configured/scheme/bearer/basic/token/other/true/false)——
+//    输出里的 "scheme":"token" 是词表,不是令牌信息;夹具里混进 "TOKEN" 一词会让泄露检查假阳性(踩过)。
+const SECRET = 'Zq7Xk2M9vB4n8WlC1jR6yTh5pD3fS0Ga';
 
 test('未配置:null / undefined / 空 / 纯空白 → configured=false,其余字段为空串', () => {
   for (const v of [null, undefined, '', '   ', '\t\n']) {
