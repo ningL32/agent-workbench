@@ -1,6 +1,6 @@
-// research.js — 调研视图（v2.9.90 重设计,业主产品方向）：
+// research.js — 调研视图（v2.9.92 布局改版,业主拍板）：
 //   流程:新建访谈 → 访谈对话 → AI 识别分析自动产出方案(md) → 方案拆解任务 → 闸门 accept。
-//   三区:场景列表 | 访谈工作面(中间列,本轮前端优化) | 方案面板(右栏,替代原知识库检索/沉淀)。
+//   三区:场景列表 + 草稿闸门内嵌(左栏,业主拍板「草稿进左栏」) | 访谈工作面(中间列纯对话) | 方案面板(右栏)。
 import { apiGet, apiPost } from '../api.js';
 import { esc, toast, icon } from '../ui.js';
 
@@ -14,6 +14,7 @@ export async function render(el) {
       <div class="rs-left">
         <div class="rs-left-h">${icon('book-open')} 场景列表 <button type="button" class="btn btn-sm" id="rs-new">${icon('plus')} 新建访谈</button></div>
         <div id="rs-scenes"></div>
+        <div id="rs-drafts-left"></div>
       </div>
       <div class="rs-main" id="rs-main"><div class="empty-state">选择或新建一个访谈场景</div></div>
       <div class="rs-right">
@@ -29,6 +30,7 @@ async function refresh() {
   try {
     state.interviews = await apiGet('/api/research/interviews');
     renderScenes();
+    renderDraftsLeft();
     if (state.selectedId) await openDetail(state.selectedId, { silent: true });
   } catch (e) {
     toast(e.message);
@@ -53,6 +55,74 @@ function renderScenes() {
   );
 }
 
+/** 左栏草稿闸门(业主拍板「草稿进左栏」):选中场景的草稿内嵌在这里,中间列纯对话 */
+function renderDraftsLeft() {
+  const box = rootEl.querySelector('#rs-drafts-left');
+  if (!box) return;
+  const d = state.detail || {};
+  const drafts = Array.isArray(d.drafts) ? d.drafts : [];
+  if (!state.selectedId || !drafts.length) {
+    box.innerHTML = '';
+    return;
+  }
+  const pending = drafts.filter((x) => x.status === 'pending');
+  const decided = drafts.filter((x) => x.status !== 'pending');
+  let html = `
+    <div class="rs-left-h">${icon('inbox')} 任务草稿闸门(${drafts.length})</div>
+    ${pending.length ? pending.map((dr) => `
+      <div class="rs-draft" data-id="${esc(dr.id)}">
+        <input type="text" class="d-title" value="${esc(dr.payload.title)}" />
+        <textarea class="d-desc" rows="2">${esc(dr.payload.desc)}</textarea>
+        <select class="d-prio">
+          ${['high', 'medium', 'low'].map((p) => `<option value="${p}"${dr.payload.priority === p ? ' selected' : ''}>${p}</option>`).join('')}
+        </select>
+        <div class="muted small">引用: ${esc(dr.quote)}</div>
+        <div>
+          <button type="button" class="btn btn-sm d-accept" data-id="${esc(dr.id)}">${icon('check')} accept</button>
+          <button type="button" class="btn btn-sm d-reject" data-id="${esc(dr.id)}">${icon('ban')} reject</button>
+        </div>
+      </div>`).join('') : '<div class="muted small">待确认草稿已清空</div>'}`;
+  if (decided.length) {
+    html += `<div class="muted small" style="margin:4px 0">已处置 ${decided.length} 条</div>`;
+    html += decided.map((dr) => `
+      <div class="rs-draft rs-draft-decided">
+        <b>${esc(dr.payload.title)}</b> <span class="muted small">${esc(dr.status)}${dr.taskId ? ` · ${esc(dr.taskId)}` : ''}</span>
+      </div>`).join('');
+  }
+  box.innerHTML = html;
+  wireDrafts(box);
+}
+
+function wireDrafts(scope) {
+  scope.querySelectorAll('.d-accept').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const box = b.closest('.rs-draft');
+      const payload = {
+        title: box.querySelector('.d-title').value.trim(),
+        desc: box.querySelector('.d-desc').value.trim(),
+        priority: box.querySelector('.d-prio').value,
+      };
+      try {
+        const dr = await apiPost(`/api/research/drafts/${b.dataset.id}/accept`, { payload, decidedBy: 'fde' });
+        const task = await apiPost('/api/tasks', { title: dr.payload.title, desc: dr.payload.desc, priority: dr.payload.priority, projectDir: ((state.detail || {}).interview || {}).projectDir || '', origin: { source: 'research', interviewId: state.detail.interview.id, quote: dr.quote } });
+        await apiPost(`/api/research/drafts/${b.dataset.id}/link`, { taskId: task.id });
+        toast(`任务 ${task.id} 已创建并挂接(闭环 A ✓)`);
+        await refresh();
+      } catch (e) { toast(e.message); }
+    })
+  );
+  scope.querySelectorAll('.d-reject').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const reason = prompt('拒绝原因(留痕):');
+      if (reason === null) return;
+      try {
+        await apiPost(`/api/research/drafts/${b.dataset.id}/reject`, { reason });
+        await refresh();
+      } catch (e) { toast(e.message); }
+    })
+  );
+}
+
 async function openDetail(id, opts = {}) {
   state.selectedId = id;
   try {
@@ -62,6 +132,7 @@ async function openDetail(id, opts = {}) {
     return;
   }
   renderScenes();
+  renderDraftsLeft();
   renderMain(opts);
   renderProposalPanel();
 }
@@ -72,7 +143,6 @@ function renderMain(opts = {}) {
   const d = state.detail || {};
   const iv = d.interview || {};
   const msgs = Array.isArray(d.messages) ? d.messages : [];
-  const drafts = Array.isArray(d.drafts) ? d.drafts : [];
   main.innerHTML = `
     <div class="rs-main-h">
       <b>${esc(iv.sceneTitle || '')}</b>
@@ -103,26 +173,7 @@ function renderMain(opts = {}) {
       <input type="file" id="rs-file" multiple hidden />
       <textarea id="rs-text" rows="2" placeholder="直接和 AI 调研顾问说说你的业务…(支持语音/附件)"></textarea>
       <button type="button" class="btn" id="rs-send">${icon('zap')} 发送</button>
-    </div>` : ''}
-    <div class="rs-drafts">
-      <div class="rs-left-h">${icon('inbox')} 任务草稿闸门(${drafts.length})</div>
-      ${drafts.length ? drafts.map((dr) => `
-        <div class="rs-draft">
-          ${dr.status === 'pending' ? `
-          <input type="text" class="d-title" value="${esc(dr.payload.title)}" />
-          <textarea class="d-desc" rows="2">${esc(dr.payload.desc)}</textarea>
-          <select class="d-prio">
-            ${['high', 'medium', 'low'].map((p) => `<option value="${p}"${dr.payload.priority === p ? ' selected' : ''}>${p}</option>`).join('')}
-          </select>
-          <div class="muted small">引用: ${esc(dr.quote)}</div>
-          <div>
-            <button type="button" class="btn btn-sm d-accept" data-id="${esc(dr.id)}">${icon('check')} accept → 建任务</button>
-            <button type="button" class="btn btn-sm d-reject" data-id="${esc(dr.id)}">${icon('ban')} reject</button>
-          </div>` : `
-          <b>${esc(dr.payload.title)}</b> <span class="muted small">${esc(dr.status)}${dr.taskId ? ` · 任务 ${esc(dr.taskId)}` : ''}${dr.rejectReason ? ` · ${esc(dr.rejectReason)}` : ''}</span>
-          <div class="muted small">引用: ${esc(dr.quote)}</div>`}
-        </div>`).join('') : '<div class="muted small">暂无草稿——访谈内容足够后,点「生成方案」自动产出方案与任务草稿</div>'}
-    </div>`;
+    </div>` : ''}`;
   wireMain(opts);
   // 对话流自动滚底(新发言/AI 回复后视线跟随)
   const msgsEl = rootEl && rootEl.querySelector('#rs-msgs');
@@ -143,7 +194,7 @@ function wireMain(opts = {}) {
       try {
         const r = await apiPost(`/api/research/interviews/${state.selectedId}/messages`, { text: v });
         if (r && r.aiMessage && r.aiMessage.kind === 'parse_error') toast('模型返回无法解析,已留痕');
-        if (r && r.drafts && r.drafts.length) toast(`产出 ${r.drafts.length} 条草稿`);
+        if (r && r.drafts && r.drafts.length) toast(`产出 ${r.drafts.length} 条草稿(左栏闸门待确认)`);
         await openDetail(state.selectedId, { silent: true });
       } catch (e) { toast(e.message); }
     });
@@ -157,7 +208,7 @@ function wireMain(opts = {}) {
     gen.disabled = true;
     gen.textContent = '生成中…(1-3分钟)';
     try {
-      const r = await apiPost(`/api/research/interviews/${state.selectedId}/proposal`, {});
+      await apiPost(`/api/research/interviews/${state.selectedId}/proposal`, {});
       toast('方案已产出(右栏)');
       await openDetail(state.selectedId, { silent: true });
     } catch (e) { toast(e.message); gen.disabled = false; }
@@ -167,62 +218,10 @@ function wireMain(opts = {}) {
     dec.disabled = true;
     try {
       const r = await apiPost(`/api/research/interviews/${state.selectedId}/decompose`, {});
-      toast(`方案拆解出 ${r.drafts.length} 条草稿,待闸门确认`);
+      toast(`方案拆解出 ${r.drafts.length} 条草稿(左栏待确认)`);
       await openDetail(state.selectedId, { silent: true });
     } catch (e) { toast(e.message); dec.disabled = false; }
   });
-  // v2.9.91 语音输入(Web Speech API,浏览器原生;不支持时隐藏麦克风)
-  const mic = main.querySelector('#rs-mic');
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (mic && !SR) mic.hidden = true;
-  if (mic && SR) {
-    let recog = null;
-    mic.addEventListener('click', () => {
-      if (recog) { recog.stop(); return; }
-      const r = new SR();
-      r.lang = 'zh-CN';
-      r.interimResults = true;
-      const base = text ? text.value : '';
-      r.onresult = (ev) => {
-        let finalText = '';
-        let interim = '';
-        for (const res of ev.results) {
-          if (res.isFinal) finalText += res[0].transcript;
-          else interim += res[0].transcript;
-        }
-        if (text) text.value = (base ? base + ' ' : '') + finalText + interim;
-      };
-      r.onend = () => { recog = null; mic.classList.remove('recording'); };
-      r.onerror = () => { recog = null; mic.classList.remove('recording'); toast('语音识别失败,请用键盘输入'); };
-      recog = r;
-      mic.classList.add('recording');
-      mic.title = '录音中…点击停止';
-      r.start();
-    });
-  }
-  // v2.9.91 附件上传:选择即传(base64 JSON),成功后显示芯片;发送时附件已在库
-  const clip = main.querySelector('#rs-paperclip');
-  const fileInput = main.querySelector('#rs-file');
-  if (clip && fileInput) {
-    clip.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async () => {
-      for (const f of fileInput.files) {
-        if (f.size > 8 * 1024 * 1024) { toast(`附件 ${f.name} 超过 8MB 上限`, 'error'); continue; }
-        try {
-          const b64 = await new Promise((resolve, reject) => {
-            const rd = new FileReader();
-            rd.onload = () => resolve(String(rd.result).split(',')[1] || '');
-            rd.onerror = () => reject(new Error('读取失败'));
-            rd.readAsDataURL(f);
-          });
-          await apiPost(`/api/research/interviews/${state.selectedId}/attachments`, { name: f.name, dataBase64: b64 });
-          toast(`附件 ${f.name} 已上传`);
-        } catch (e) { toast(`附件 ${f.name} 上传失败: ${e.message}`); }
-      }
-      fileInput.value = '';
-      await openDetail(state.selectedId, { silent: true });
-    });
-  }
   const doExport = async (format) => {
     const iv = (state.detail && state.detail.interview) || {};
     try {
@@ -241,33 +240,6 @@ function wireMain(opts = {}) {
   const exB = main.querySelector('#rs-exp-bpmn');
   if (exR) exR.addEventListener('click', () => doExport('report'));
   if (exB) exB.addEventListener('click', () => doExport('bpmn'));
-  main.querySelectorAll('.d-accept').forEach((b) =>
-    b.addEventListener('click', async () => {
-      const box = b.closest('.rs-draft');
-      const payload = {
-        title: box.querySelector('.d-title').value.trim(),
-        desc: box.querySelector('.d-desc').value.trim(),
-        priority: box.querySelector('.d-prio').value,
-      };
-      try {
-        const dr = await apiPost(`/api/research/drafts/${b.dataset.id}/accept`, { payload, decidedBy: 'fde' });
-        const task = await apiPost('/api/tasks', { title: dr.payload.title, desc: dr.payload.desc, priority: dr.payload.priority, projectDir: (state.detail.interview.projectDir || ''), origin: { source: 'research', interviewId: state.detail.interview.id, quote: dr.quote } });
-        await apiPost(`/api/research/drafts/${b.dataset.id}/link`, { taskId: task.id });
-        toast(`任务 ${task.id} 已创建并挂接(闭环 A ✓)`);
-        await openDetail(state.selectedId, { silent: true });
-      } catch (e) { toast(e.message); }
-    })
-  );
-  main.querySelectorAll('.d-reject').forEach((b) =>
-    b.addEventListener('click', async () => {
-      const reason = prompt('拒绝原因(留痕):');
-      if (reason === null) return;
-      try {
-        await apiPost(`/api/research/drafts/${b.dataset.id}/reject`, { reason });
-        await openDetail(state.selectedId, { silent: true });
-      } catch (e) { toast(e.message); }
-    })
-  );
 }
 
 function renderProposalPanel() {

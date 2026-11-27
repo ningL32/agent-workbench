@@ -1547,3 +1547,8 @@ a.diary-src:hover { text-decoration: underline; }
 @keyframes rs-pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 .rs-att-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .rs-prop-md h1, .rs-prop-md h2 { font-size: 14px; margin: 8px 0 4px; }
+
+/* ---- v2.9.92:草稿闸门内嵌左栏 ---- */
+.research-layout { grid-template-columns: 320px 1fr 300px; }
+.rs-draft { padding: 6px; margin-bottom: 6px; }
+.rs-draft-decided { opacity: .55; padding: 4px 6px; }
