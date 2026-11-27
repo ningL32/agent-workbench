@@ -226,7 +226,7 @@ function wireMain(opts = {}) {
   const doExport = async (format) => {
     const iv = (state.detail && state.detail.interview) || {};
     try {
-      const res = await fetch(`/fde-api/api/research/export?scene=${encodeURIComponent(iv.projectDir || '')}&format=${format}`, {
+      const res = await fetch(`/fde-api/research/export?scene=${encodeURIComponent(iv.projectDir || '')}&format=${format}`, {
         headers: { Authorization: `Bearer ${new URLSearchParams(location.search).get('token') || ''}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
