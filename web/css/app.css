@@ -1552,3 +1552,12 @@ a.diary-src:hover { text-decoration: underline; }
 .research-layout { grid-template-columns: 320px 1fr 300px; }
 .rs-draft { padding: 6px; margin-bottom: 6px; }
 .rs-draft-decided { opacity: .55; padding: 4px 6px; }
+
+/* ---- v2.9.94:任务流程图面板 ---- */
+.rs-flow { border: 1px solid var(--border); border-radius: 10px; margin-top: 8px; background: rgba(255,255,255,.02); }
+.rs-flow-h { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.rs-flow-h .spacer { flex: 1; }
+.rs-flow-body { padding: 12px; overflow: auto; max-height: 420px; }
+.rs-flow-svg svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.rs-flow-svg g { cursor: pointer; }
+.rs-flow-svg g:hover rect { filter: brightness(1.25); }

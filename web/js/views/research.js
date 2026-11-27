@@ -2,7 +2,7 @@
 //   流程:新建访谈 → 访谈对话 → AI 识别分析自动产出方案(md) → 方案拆解任务 → 闸门 accept。
 //   三区:场景列表 + 草稿闸门内嵌(左栏,业主拍板「草稿进左栏」) | 访谈工作面(中间列纯对话) | 方案面板(右栏)。
 import { apiGet, apiPost } from '../api.js';
-import { esc, toast, icon } from '../ui.js';
+import { esc, toast, icon, openModal } from '../ui.js';
 
 let rootEl = null;
 let state = { interviews: [], selectedId: null, detail: null };
@@ -187,11 +187,89 @@ function renderMain(opts = {}) {
       <input type="file" id="rs-file" multiple hidden />
       <textarea id="rs-text" rows="2" placeholder="直接和 AI 调研顾问说说你的业务…(支持语音/附件)"></textarea>
       <button type="button" class="btn" id="rs-send">${icon('zap')} 发送</button>
-    </div>` : ''}`;
+    </div>` : ''}
+    <div class="rs-flow">
+      <div class="rs-flow-h">
+        ${icon('git-branch')} <b>任务流程图</b>
+        <span class="muted small" id="rs-flow-meta">${(d.drafts || []).length ? `${(d.drafts || []).length} 个任务` : '拆解方案后展示依赖关系'}</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost xs" id="rs-flow-refresh" title="刷新流程图(重新读取草稿与状态)">${icon('refresh-cw')} 刷新</button>
+        <button type="button" class="btn ghost xs" id="rs-flow-mmd" title="查看 Mermaid 文本(可自行渲染/截图)">${icon('file-text')} Mermaid</button>
+      </div>
+      <div class="rs-flow-body" id="rs-flow-body"></div>
+    </div>`;
   wireMain(opts);
+  loadFlow();
   // 对话流自动滚底(新发言/AI 回复后视线跟随)
   const msgsEl = rootEl && rootEl.querySelector('#rs-msgs');
   if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+/**
+ * 加载任务流程图(v2.9.94):
+ *   - 结构化 {nodes, edges} 经 apiGet 拉取(可断言);SVG 经带 cache-bust 的 URL 拉取后**内联**注入
+ *     (服务端渲染,零依赖;Cache-Control: no-cache + 时间戳参数保证「刷新」必取新图)
+ *   - 空草稿时显示引导文案,不出错
+ */
+let flowCache = { id: null, data: null };
+async function loadFlow() {
+  const body = rootEl && rootEl.querySelector('#rs-flow-body');
+  if (!body || !state.selectedId) return;
+  const wanted = state.selectedId; // 竞态守卫:await 期间用户可能切了场景
+  try {
+    const [flow, res] = await Promise.all([
+      apiGet(`/api/research/interviews/${wanted}/flow`),
+      fetch(`/fde-api/research/interviews/${wanted}/flow.svg?_=${Date.now()}`, { cache: 'no-store' }),
+    ]);
+    if (state.selectedId !== wanted) return;
+    flowCache = { id: wanted, data: flow };
+    if (!flow.nodes.length) {
+      body.innerHTML = '<div class="muted small" style="padding:14px 0">还没有任务草稿——点「生成方案」→「方案拆解任务」后,这里展示任务依赖关系图</div>';
+      return;
+    }
+    const meta = rootEl.querySelector('#rs-flow-meta');
+    if (meta) meta.textContent = `${flow.nodes.length} 个任务 · ${flow.edges.length} 条依赖 · 已建任务 ${flow.nodes.filter((n) => n.status === 'accepted').length}`;
+    if (res.ok) {
+      // 内联 SVG(非 <img>):<img> 会隔离 SVG 内部事件,做不了节点点击/悬停。
+      // 内容出自本服务端 toSvg()——节点标题经 escXml 转义,非用户原文直插。
+      const svg = await res.text();
+      if (!/^<svg[\s>]/.test(svg)) throw new Error('流程图响应不是 SVG');
+      body.innerHTML = `<div class="rs-flow-svg">${svg}</div>`;
+      wireFlowNodes(body);
+    } else {
+      body.innerHTML = `<div class="muted small">流程图渲染失败(HTTP ${res.status})</div>`;
+    }
+  } catch (e) {
+    body.innerHTML = `<div class="muted small">流程图加载失败: ${esc(e.message)}</div>`;
+  }
+}
+
+/**
+ * 流程图节点交互(v2.9.94):点击节点 → 弹层展示该任务全貌(标题/状态/优先级/依赖/引用/描述)。
+ * 数据取自 flowCache(与 SVG 同一次拉取),不依赖 SVG 文本内容。
+ */
+function wireFlowNodes(scope) {
+  const nodes = (flowCache.data && flowCache.data.nodes) || [];
+  scope.querySelectorAll('.rs-flow-svg g[data-draft-id]').forEach((g) => {
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    const open = () => {
+      const nd = nodes.find((x) => x.id === g.dataset.draftId);
+      if (!nd) return;
+      const draft = ((state.detail && state.detail.drafts) || []).find((x) => x.id === nd.id);
+      const depText = nd.deps.length ? `任务 ${nd.deps.join('、任务')}` : '无';
+      const box = document.createElement('div');
+      box.innerHTML = `
+        <p><b>${esc(nd.n === null ? '' : nd.n + '. ')}${esc(nd.title)}</b></p>
+        <p class="muted small">状态 ${esc(nd.status === 'accepted' ? '已建任务' : nd.status === 'pending' ? '待确认' : nd.status === 'rejected' ? '已拒绝' : nd.status)} · 优先级 ${esc(nd.priority)}${nd.taskId ? ` · 任务 <span class="mono">${esc(nd.taskId)}</span>` : ''}</p>
+        <p class="muted small">依赖:${esc(depText)}</p>
+        ${draft && draft.quote ? `<p class="muted small">引用:${esc(draft.quote)}</p>` : ''}
+        <pre style="white-space:pre-wrap;font-size:12px;max-height:240px;overflow:auto">${esc((draft && draft.payload && draft.payload.desc) || '')}</pre>`;
+      openModal({ title: '流程图节点', body: box });
+    };
+    g.addEventListener('click', open);
+    g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  });
 }
 
 function wireMain(opts = {}) {
@@ -210,7 +288,13 @@ function wireMain(opts = {}) {
         if (r && r.aiMessage && r.aiMessage.kind === 'parse_error') toast('模型返回无法解析,已留痕');
         if (r && r.drafts && r.drafts.length) toast(`产出 ${r.drafts.length} 条草稿(左栏闸门待确认)`);
         await openDetail(state.selectedId, { silent: true });
-      } catch (e) { toast(e.message); }
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        // 不论成败都恢复输入区:原先失败时按钮会一直禁用,用户没法重发
+        send.disabled = false;
+        text.disabled = false;
+      }
     });
   }
   const close = main.querySelector('#rs-close');
@@ -254,6 +338,45 @@ function wireMain(opts = {}) {
   const exB = main.querySelector('#rs-exp-bpmn');
   if (exR) exR.addEventListener('click', () => doExport('report'));
   if (exB) exB.addEventListener('click', () => doExport('bpmn'));
+  // v2.9.94 流程图:刷新(重取 SVG+结构数据)与 Mermaid 文本(查看/复制/下载——业主自行渲染截图)
+  const flowRefresh = main.querySelector('#rs-flow-refresh');
+  if (flowRefresh) flowRefresh.addEventListener('click', async () => {
+    flowRefresh.disabled = true;
+    await loadFlow();
+    flowRefresh.disabled = false;
+    toast('流程图已刷新');
+  });
+  const flowMmd = main.querySelector('#rs-flow-mmd');
+  if (flowMmd) flowMmd.addEventListener('click', async () => {
+    try {
+      const r = await fetch(`/fde-api/research/interviews/${state.selectedId}/flow.mmd?_=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const mmd = await r.text();
+      const box = document.createElement('div');
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'white-space:pre-wrap;font-size:12px;max-height:360px;overflow:auto;user-select:text';
+      pre.textContent = mmd;
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.className = 'btn btn-sm';
+      copy.textContent = '复制';
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(mmd); toast('Mermaid 文本已复制'); } catch (e) { toast('复制失败,请手动选择'); }
+      });
+      const dl = document.createElement('button');
+      dl.type = 'button';
+      dl.className = 'btn btn-sm';
+      dl.textContent = '下载 .mmd';
+      dl.addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([mmd], { type: 'text/plain' }));
+        a.download = 'flow.mmd';
+        a.click();
+      });
+      box.append(copy, ' ', dl, pre);
+      openModal({ title: 'Mermaid 流程图文本(粘贴到任意 Mermaid 渲染器)', body: box, wide: true });
+    } catch (e) { toast(e.message); }
+  });
 }
 
 function renderProposalPanel() {
