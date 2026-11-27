@@ -54,13 +54,14 @@ export async function render(el) {
           <div><input id="gh-org" placeholder="组织名或用户名（启用时必填）"></div></div>
         <div class="frow"><label>API 地址</label>
           <div><input id="gh-baseurl" class="mono" placeholder="https://api.github.com"><div class="hint">GitHub Enterprise 换成自建地址——host 须先在 config.json 的 github.hostWhitelist 白名单内（白名单仅手改）</div></div></div>
-        <div class="frow"><label>凭据命令</label>
+        <div class="frow"><label>访问令牌</label>
           <div>
-            <div class="cred-cmd">
+            <div id="gh-cred-status" class="note">…</div>
+            <div class="cred-cmd" style="margin-top:6px">
               <pre class="mono" id="gh-cred-cmd"></pre>
               <button type="button" class="btn ghost xs" id="gh-cred-copy">${icon('copy')}复制命令</button>
             </div>
-            <div class="hint">私库才需要（值形如 "Authorization: Bearer ghp_xxx"）；令牌不进页面、不落盘</div>
+            <div class="hint" id="gh-cred-hint"></div>
           </div></div>
         <div class="frow"><label></label>
           <div>
@@ -68,7 +69,7 @@ export async function render(el) {
               <button type="button" class="btn ghost xs" id="gh-test">${icon('zap')}测试连接</button>
               <span class="note" id="gh-test-result"></span>
             </div>
-            <div class="hint">按上方组织名/API 地址当前值探测（保存前可先试），拉 1 条最新事件验证链路</div>
+            <div class="hint">按上方当前值探测（保存前可先试），拉 1 条最新事件验证链路</div>
           </div></div>
       </div>
 
@@ -277,6 +278,7 @@ export async function render(el) {
   el.querySelector('#setup-banner-go').addEventListener('click', scrollToCheckCard);
   // GitHub 动态源（v2.9.17 页面化）：开关即时 PATCH / 凭据命令随 API 地址联动 / 复制
   el.querySelector('#gh-enabled').addEventListener('click', toggleGithub);
+  el.querySelector('#gh-account-type').addEventListener('change', () => syncGithubAccountUi());
   el.querySelector('#gh-baseurl').addEventListener('input', drawGithubCmd);
   el.querySelector('#gh-cred-copy').addEventListener('click', copyGhCredCmd);
   // Gitee 动态源（v2.9.18 页面化）：开关即时 PATCH / 凭据命令随 API 地址联动 / 复制
@@ -353,7 +355,8 @@ async function load() {
   const root = rootEl;
   if (!root) return;
   try {
-    const s = await apiGet('/api/settings');
+    // ?credential=1:只有设置页需要 GitHub 凭据状态(未配令牌时服务端要起一次 git 子进程,别的视图不带)
+    const s = await apiGet('/api/settings?credential=1');
     if (!rootEl) return;
     current = s || {};
     // 钉钉采集 / 分析引擎 / 安全（二期新三卡）回读
@@ -501,7 +504,67 @@ function drawGithub(gh) {
   root.querySelector('#gh-account-type').value = gh && gh.accountType === 'user' ? 'user' : 'org';
   root.querySelector('#gh-org').value = (gh && gh.org) || '';
   root.querySelector('#gh-baseurl').value = (gh && gh.baseUrl) || '';
+  syncGithubAccountUi(gh);
   drawGithubCmd();
+}
+
+/**
+ * 账号类型联动(v2.9.93):标签/占位符/令牌提示随「组织|个人」切换。
+ * 读的是下拉**当前值**(非已保存配置)——用户切了但没保存时,界面也要立刻按新类型说话。
+ * @param {object} [gh] 已保存的 github 配置(取 credential);缺省时从 current 取
+ */
+function syncGithubAccountUi(gh) {
+  const root = rootEl;
+  if (!root) return;
+  const sel = root.querySelector('#gh-account-type');
+  if (!sel) return;
+  const isUser = sel.value === 'user';
+  const label = root.querySelector('#gh-org-label');
+  const org = root.querySelector('#gh-org');
+  if (label) label.textContent = isUser ? '用户名' : '组织名';
+  if (org) org.placeholder = isUser ? 'GitHub 用户名（启用时必填）' : '组织名（启用时必填）';
+  drawGithubCredStatus(gh || (current && current.github));
+}
+
+/**
+ * 凭据状态 + 令牌提示(v2.9.93)。后端只给 configured + 尾 4 位 + scheme,令牌本身永不出后端。
+ * 提示文案随「账号类型」联动:个人模式读公开活动,公开仓库本就不需要令牌。
+ */
+function drawGithubCredStatus(gh) {
+  const root = rootEl;
+  if (!root) return;
+  const cred = (gh && gh.credential) || null;
+  const statusEl = root.querySelector('#gh-cred-status');
+  const hintEl = root.querySelector('#gh-cred-hint');
+  if (!statusEl) return;
+  if (cred && cred.configured) {
+    const label = { bearer: 'Bearer', basic: 'Basic', token: 'token' }[cred.scheme] || '自定义';
+    statusEl.innerHTML = `<span style="color:var(--green)">${icon('lock')} 已配置</span> <span class="muted small">(${label}${cred.tail ? ` ····${esc(cred.tail)}` : ''})</span>`;
+  } else {
+    statusEl.innerHTML = `<span class="muted">${icon('lock')} 未配置 —— 当前为匿名访问</span>`;
+  }
+  if (!hintEl) return;
+  // 已配置的值在服务端缓存到进程结束:更换/清除要重启才生效;首次配置不用(测试连接会重新读)
+  const configured = !!(cred && cred.configured);
+  const how = configured ? '如需更换令牌,在终端重新执行下方命令。更换或清除后需重启 DSH 才生效。' : '在终端执行下方命令(把 <PAT> 换成你的令牌),再点「测试连接」确认,无需重启。';
+  const sel = root.querySelector('#gh-account-type');
+  const isUser = sel && sel.value === 'user';
+  hintEl.textContent = isUser
+    ? `个人模式读取公开活动,公开仓库无需令牌;配置令牌只为提高限流(匿名 60 次/时)。${how}`
+    : `组织模式读取私有仓库需要令牌。${how}`;
+}
+
+/** 测试连接后回读凭据状态:探测结果里的「令牌/匿名」要和状态行说同一件事 */
+async function refreshGithubCred() {
+  const root = rootEl;
+  if (!root || !current) return;
+  try {
+    const s = await apiGet('/api/settings?credential=1');
+    const gh = s && s.github;
+    if (!rootEl || !gh || !gh.credential) return;
+    current = Object.assign({}, current, { github: Object.assign({}, current.github || {}, { credential: gh.credential }) });
+    drawGithubCredStatus(current.github);
+  } catch { /* 状态行回读失败不打扰用户:探测结果本身已说明令牌/匿名 */ }
 }
 
 async function toggleGithub() {
@@ -512,9 +575,29 @@ async function toggleGithub() {
   const org = root.querySelector('#gh-org').value.trim();
   if (next && !org) { toast('启用前先填组织名或用户名', 'error'); return; }
   try {
-    // 开关即时 PATCH（同雷达开关口径）：热生效随下个轮询周期，无需重启
-    const r = await api('/api/settings', { method: 'PATCH', body: { github: { enabled: next } } });
-    drawGithub(r.github || {});
+    // 开关即时 PATCH,并**连同表单当前值一起提交**。
+    // 原先只发 {enabled}:服务器上 org/accountType 仍是旧值,下方若用返回值重画表单,
+    // 会把用户刚填的用户名清空;之后再点「保存设置」又被「必填」校验拦住——死路(真机复现)。
+    const r = await api('/api/settings', {
+      method: 'PATCH',
+      body: {
+        github: {
+          enabled: next,
+          org,
+          accountType: root.querySelector('#gh-account-type').value,
+          baseUrl: root.querySelector('#gh-baseurl').value.trim(),
+        },
+      },
+    });
+    // 只同步开关态,不重画输入框——别覆盖用户正在编辑的内容
+    const back = r.github || {};
+    sw.setAttribute('aria-pressed', String(!!back.enabled));
+    sw.classList.toggle('off', !back.enabled);
+    root.querySelector('#gh-enabled-tip').textContent = back.enabled ? '已启用' : '未启用';
+    // PATCH 的响应不含 credential(只有 GET 才附带脱敏状态)——保留旧值,否则界面会误显示"未配置"
+    const prevCred = (current && current.github && current.github.credential) || null;
+    current = Object.assign({}, current, { github: Object.assign({}, back, { credential: prevCred }) });
+    syncGithubAccountUi(current.github);
     toast(next ? 'GitHub 动态源已启用（下个轮询周期生效）' : 'GitHub 动态源已关闭', 'success');
   } catch (e) {
     toast(e.message);
@@ -583,8 +666,16 @@ async function toggleGitee() {
   const org = root.querySelector('#ge-org').value.trim();
   if (next && !org) { toast('启用前先填组织名（仅支持组织）', 'error'); return; }
   try {
-    const r = await api('/api/settings', { method: 'PATCH', body: { gitee: { enabled: next } } });
-    drawGitee(r.gitee || {});
+    // 同 toggleGithub:开关请求带上表单当前值,且不重画输入框(否则刚填的组织名被清空、之后无法保存)
+    const r = await api('/api/settings', {
+      method: 'PATCH',
+      body: { gitee: { enabled: next, org, baseUrl: root.querySelector('#ge-baseurl').value.trim() } },
+    });
+    const back = r.gitee || {};
+    sw.setAttribute('aria-pressed', String(!!back.enabled));
+    sw.classList.toggle('off', !back.enabled);
+    root.querySelector('#ge-enabled-tip').textContent = back.enabled ? '已启用' : '未启用';
+    current = Object.assign({}, current, { gitee: back });
     toast(next ? 'Gitee 动态源已启用（下个轮询周期生效）' : 'Gitee 动态源已关闭', 'success');
   } catch (e) {
     toast(e.message);
@@ -749,17 +840,21 @@ async function testSource(source, btnId, outId) {
     const r = await apiPost('/api/sources/test', {
       source,
       org: root.querySelector(source === 'github' ? '#gh-org' : '#ge-org').value.trim(),
-      baseUrl: root.querySelector(source === 'github' ? '#gh-baseurl' : '#ge-baseurl').value.trim()
+      baseUrl: root.querySelector(source === 'github' ? '#gh-baseurl' : '#ge-baseurl').value.trim(),
+      // v2.9.93 账号类型随表单值一起探测:否则「切到个人再测」时服务端仍按已保存的 org 打 /orgs/ → 404 死循环
+      ...(source === 'github' ? { accountType: root.querySelector('#gh-account-type').value } : {}),
     });
     if (r.ok) {
       const mode = r.hasToken ? '令牌' : '匿名';
+      const kind = source === 'github' ? ` · ${r.accountType === 'user' ? '个人' : '组织'}` : '';
       const latest = r.latest ? ` · 最新 ${r.latest.type} ${r.latest.repo}` : ' · 窗内暂无事件';
-      out.textContent = `✓ ok · ${r.latencyMs}ms · ${mode}${latest}`;
+      out.textContent = `✓ ok · ${r.latencyMs}ms · ${mode}${kind}${latest}`;
       out.style.color = 'var(--green)';
     } else {
       out.textContent = `✗ ${r.error || '探测失败'}`;
       out.style.color = 'var(--red)';
     }
+    if (source === 'github') await refreshGithubCred();
   } catch (e) {
     out.textContent = `✗ ${e.message}`;
     out.style.color = 'var(--red)';

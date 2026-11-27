@@ -295,3 +295,110 @@ test('accountType=user：/users/{name}/events 端点（个人公开活动），o
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ------------------------------------------------- 测试连接跟随表单 accountType（v2.9.93）
+
+/** 起一个只挂 /api/sources/test 的本地服务，返回 { post } */
+async function listenSourceTest(cfg) {
+  routesGitea.setConfigProvider(() => cfg);
+  const server = http.createServer((req, res) => routesGitea.handleSourceTest(req, res));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const post = async (body) => {
+    const r = await fetch(`${base}/api/sources/test`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    return { status: r.status, body: await r.json() };
+  };
+  return { server, post };
+}
+
+test('回归（真机故障同构）：已保存=组织、表单切到「个人」未保存 → 测试连接须打 /users/，不得再 404', async () => {
+  // Arrange：ningL32 是个人账号——/orgs/ 404、/users/ 200
+  const seen = [];
+  const stub = http.createServer((req, res) => {
+    seen.push(req.url);
+    if (req.url.startsWith('/users/ningL32/events')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify([ghEvent('PushEvent')]));
+    }
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ message: 'Not Found' }));
+  });
+  await new Promise((resolve) => stub.listen(0, '127.0.0.1', resolve));
+  const dir = tmpDir();
+  // 已保存配置:accountType 仍是 org(用户只是在下拉里切了个人,还没点保存)
+  const { server, post } = await listenSourceTest(ghCfg(stub.address().port, dir, { org: 'ningL32', accountType: 'org' }));
+  try {
+    // Act 1：不带 accountType → 沿用已保存的 org → 404,并给出「切换为个人」提示
+    const r1 = await post({ source: 'github', org: 'ningL32' });
+    // Assert 1
+    assert.equal(r1.status, 200, '测试语义:失败也 200 + ok:false');
+    assert.equal(r1.body.ok, false);
+    assert.equal(r1.body.accountType, 'org', '回显实际使用的账号类型');
+    assert.match(r1.body.error, /404/);
+    assert.match(r1.body.error, /切换为「个人」/);
+
+    // Act 2：表单值 accountType=user(未保存)→ 必须走 /users/ 且成功
+    seen.length = 0;
+    const r2 = await post({ source: 'github', org: 'ningL32', accountType: 'user' });
+    // Assert 2
+    assert.equal(r2.body.ok, true, `切到个人后应连通,实际: ${r2.body.error}`);
+    assert.equal(r2.body.accountType, 'user');
+    assert.deepEqual(seen.filter((u) => u.includes('/events')).map((u) => u.split('?')[0]), ['/users/ningL32/events'], '只打个人端点');
+  } finally {
+    server.close();
+    stub.close();
+    routesGitea.setConfigProvider(null);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('测试连接 accountType 校验：非法值 / 非字符串 / 用于 gitee → 400 SETTINGS_INVALID 且不出网', async () => {
+  const seen = [];
+  const stub = http.createServer((req, res) => { seen.push(req.url); res.writeHead(200); res.end('[]'); });
+  await new Promise((resolve) => stub.listen(0, '127.0.0.1', resolve));
+  const dir = tmpDir();
+  const cfg = ghCfg(stub.address().port, dir, { org: 'x' });
+  cfg.gitee = { ...cfg.gitea, baseUrl: `http://[::ffff:127.0.0.1]:${stub.address().port}`, hostWhitelist: ['gitee.example.com', LOOPBACK_WL] };
+  const { server, post } = await listenSourceTest(cfg);
+  try {
+    // Act
+    const bad = await post({ source: 'github', org: 'x', accountType: 'team' });
+    const nonStr = await post({ source: 'github', org: 'x', accountType: 1 });
+    const onGitee = await post({ source: 'gitee', org: 'x', accountType: 'user' });
+    // Assert
+    for (const r of [bad, nonStr, onGitee]) {
+      assert.equal(r.status, 400);
+      assert.equal(r.body.error.code, 'SETTINGS_INVALID');
+    }
+    assert.match(bad.body.error.message, /org 或 user/);
+    assert.equal(seen.length, 0, '校验失败不得出网');
+  } finally {
+    server.close();
+    stub.close();
+    routesGitea.setConfigProvider(null);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('个人端点 404 的对称提示：用户名不存在 → 提示核对用户名或切换为「组织」', async () => {
+  const stub = http.createServer((req, res) => { res.writeHead(404); res.end(JSON.stringify({ message: 'Not Found' })); });
+  await new Promise((resolve) => stub.listen(0, '127.0.0.1', resolve));
+  const dir = tmpDir();
+  const { server, post } = await listenSourceTest(ghCfg(stub.address().port, dir, { org: 'ghost', accountType: 'user' }));
+  try {
+    // Act
+    const r = await post({ source: 'github', org: 'ghost' });
+    // Assert
+    assert.equal(r.body.ok, false);
+    assert.equal(r.body.accountType, 'user');
+    assert.match(r.body.error, /切换为「组织」/);
+    assert.doesNotMatch(r.body.error, /切换为「个人」/, '不得再给出与当前类型自相矛盾的提示');
+  } finally {
+    server.close();
+    stub.close();
+    routesGitea.setConfigProvider(null);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

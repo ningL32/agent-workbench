@@ -87,6 +87,26 @@ test('GET /api/settings：脱敏视图，credential 只有来源枚举，无任�
   assert.ok(!('extraheader' in r.body), '不应出现 extraheader 字段');
 });
 
+test('GET /api/settings：GitHub 凭据状态仅在 ?credential=1 时附带，形状封闭（只有 configured/tail/scheme）', async () => {
+  // Arrange：夹具不配 github 节 → 视图里也应有 github 键（缺省回填），但不带凭据状态
+  // Act 1：不带参数（成员/智能体/动态三个视图的读法）
+  const plain = await api('GET', '/api/settings');
+  // Assert 1：未配令牌时服务端要起一次同步 git 子进程，用不到的视图不该触发——字段干脆不出现
+  assert.strictEqual(plain.status, 200);
+  assert.ok(plain.body.github && typeof plain.body.github === 'object', '视图含 github 节');
+  assert.ok(!('credential' in plain.body.github), '不带 ?credential=1 不附带凭据状态');
+
+  // Act 2：设置页读法
+  const withCred = await api('GET', '/api/settings?credential=1');
+  // Assert 2
+  assert.strictEqual(withCred.status, 200);
+  const c = withCred.body.github.credential;
+  assert.deepStrictEqual(Object.keys(c).sort(), ['configured', 'scheme', 'tail'], '形状封闭：不携带长度/前缀/原值');
+  assert.strictEqual(typeof c.configured, 'boolean');
+  assert.ok(c.tail.length <= 4, '尾位永不超过 4 位');
+  assert.ok(['', 'bearer', 'basic', 'token', 'other'].includes(c.scheme), 'scheme 是闭集');
+});
+
 test('PATCH 深合并：只改 pollIntervalSec，其余 gitea 字段与磁盘文件保持完整', async () => {
   const r = await api('PATCH', '/api/settings', { gitea: { pollIntervalSec: 120 } });
   assert.strictEqual(r.status, 200);
