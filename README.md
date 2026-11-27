@@ -4,6 +4,8 @@
 
 [![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/fde-console.svg)](https://www.npmjs.com/package/fde-console)
+[![npm weekly downloads](https://img.shields.io/npm/dw/fde-console.svg)](https://www.npmjs.com/package/fde-console)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.13-blue.svg)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-zero-9cf.svg)
 
@@ -59,7 +61,7 @@ A local-first workbench plugin for [DSH](https://www.npmjs.com/package/@deepseek
 ```bash
 # 1. install / update the plugin into a profile (the profile is created on first use)
 dsh plugin --profile fde-dev add fde-console        # from npm — one line
-#    (if the dsh market index lags behind npm, pin it: fde-console@2.9.81)
+#    (if the dsh market index lags behind npm, pin it: fde-console@2.9.97)
 #    …or from a local clone of this repo:
 #    dsh plugin --profile fde-dev add <this repo path>
 

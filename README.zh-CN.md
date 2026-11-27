@@ -6,6 +6,8 @@
 
 [![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/fde-console.svg)](https://www.npmjs.com/package/fde-console)
+[![npm 每周下载](https://img.shields.io/npm/dw/fde-console.svg)](https://www.npmjs.com/package/fde-console)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.13-blue.svg)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-zero-9cf.svg)
 
@@ -61,7 +63,7 @@
 ```bash
 # 1. 把插件装进 profile（首次执行自动创建 profile）
 dsh plugin --profile fde-dev add fde-console        # npm 一行安装（推荐）
-#    （若市场索引同步滞后于 npm,钉版本: fde-console@2.9.81）
+#    （若市场索引同步滞后于 npm,钉版本: fde-console@2.9.97）
 #    …或从本地克隆安装：
 #    dsh plugin --profile fde-dev add <本仓库路径>
 
