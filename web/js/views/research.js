@@ -290,7 +290,12 @@ function wireMain(opts = {}) {
       text.disabled = true;
       try {
         const r = await apiPost(`/api/research/interviews/${state.selectedId}/messages`, { text: v });
-        if (r && r.aiMessage && r.aiMessage.kind === 'parse_error') toast('模型返回无法解析,已留痕');
+        if (r && r.aiMessage && r.aiMessage.kind === 'parse_error') {
+          // 额度耗尽和真正的解析失败是两回事:前者重试无用,得充值;别都用一句「无法解析」误导
+          toast(/额度不足/.test(r.aiMessage.text)
+            ? '模型额度不足：本轮没有 AI 回复（你的发言已保留），充值后重发即可'
+            : '模型返回无法解析，已留痕');
+        }
         if (r && r.drafts && r.drafts.length) toast(`产出 ${r.drafts.length} 条草稿(左栏闸门待确认)`);
         await openDetail(state.selectedId, { silent: true });
       } catch (e) {
