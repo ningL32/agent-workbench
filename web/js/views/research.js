@@ -89,7 +89,11 @@ function renderMain(opts = {}) {
           <span class="muted small">${m.role === 'client' ? '客户' : m.role === 'AI' ? 'AI 调研顾问' : esc(m.role)}${m.kind !== 'normal' ? ` · ${esc(m.kind)}` : ''} · ${esc(String(m.ts || '').slice(0, 19).replace('T', ' '))}</span>
           <div class="rs-msg-body">${esc(m.text)}</div>
         </div>`).join('') : '<div class="muted small">还没有发言——我是 AI 调研顾问,直接说说你的业务现状,我来帮你梳理(支持语音/附件)</div>'}
-      ${(iv.attachments || []).length ? `<div class="rs-att-chips">${iv.attachments.map((a) => `<span class="chip tiny" title="${esc(a.name)} · ${a.bytes}B">${icon('paperclip')} ${esc(a.name)}</span>`).join('')}</div>` : ''}
+      ${(iv.attachments || []).length ? `<div class="rs-att-chips">${iv.attachments.map((a) => {
+        const shortName = a.name.length > 24 ? a.name.slice(0, 14) + '…' + a.name.slice(-7) : a.name;
+        const kb = a.bytes >= 1024 ? Math.round(a.bytes / 1024) + 'KB' : a.bytes + 'B';
+        return `<span class="chip tiny" title="${esc(a.name)} · ${kb}${a.kind === 'text' ? ' · AI 可读内容' : ' · 图片型,AI 仅参考文件名'}">${icon('paperclip')} ${esc(shortName)} (${kb})</span>`;
+      }).join('')}</div>` : ''}
     </div>
     ${iv.status === 'open' ? `
     <div class="rs-atts" id="rs-atts"></div>
@@ -120,6 +124,9 @@ function renderMain(opts = {}) {
         </div>`).join('') : '<div class="muted small">暂无草稿——访谈内容足够后,点「生成方案」自动产出方案与任务草稿</div>'}
     </div>`;
   wireMain(opts);
+  // 对话流自动滚底(新发言/AI 回复后视线跟随)
+  const msgs = rootEl && rootEl.querySelector('#rs-msgs');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
 }
 
 function wireMain(opts = {}) {
