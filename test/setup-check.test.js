@@ -113,19 +113,20 @@ test('probeLlmRoute：旧口径两文件齐 ok；0.2.1+ 认 profile 的 agent-de
   const existsBoth = (p) => p === path.join(dir, 'settings.yaml') || p === path.join(dir, '.credentials.yaml');
   const onlySettings = (p) => p === path.join(dir, 'settings.yaml');
 
-  const both = probeLlmRoute({}, { existsSync: existsBoth, dshHomeDir: dir });
+  const both = probeLlmRoute({}, { existsSync: existsBoth, dshHomeDir: dir, homeDotDsh: dir });
   assert.strictEqual(both.ok, true);
   assert.strictEqual(both.hint, null);
 
-  const missingCred = probeLlmRoute({}, { existsSync: onlySettings, dshHomeDir: dir });
+  const missingCred = probeLlmRoute({}, { existsSync: onlySettings, dshHomeDir: dir, homeDotDsh: dir });
   assert.strictEqual(missingCred.ok, false);
   assert.ok(missingCred.detail.includes('.credentials.yaml'), 'detail 指出缺失文件');
   assert.ok(!missingCred.detail.includes(' settings.yaml 存在'), 'detail 不误报存在文件');
   assert.strictEqual(missingCred.hint, HINTS.llmRoute);
 
-  const none = probeLlmRoute({}, { existsSync: () => false, dshHomeDir: dir });
+  const none = probeLlmRoute({}, { existsSync: () => false, dshHomeDir: dir, homeDotDsh: dir });
   assert.strictEqual(none.ok, false);
-  assert.ok(none.detail.includes('settings.yaml、.credentials.yaml'), '两文件均缺失时 detail 一并列出');
+  assert.ok(none.detail.includes('settings.yaml + .credentials.yaml'), 'detail 说明在找哪两种配置形态');
+  assert.ok(none.detail.includes(dir), 'detail 列出被扫目录');
   assert.strictEqual(none.hint, HINTS.llmRoute);
 
   // 0.2.1+：settings.yaml 不存在，但 profile 的 cordis.patch.yml 有 agent-default-model 行 → 必须判 ok
@@ -143,6 +144,7 @@ test('probeLlmRoute：旧口径两文件齐 ok；0.2.1+ 认 profile 的 agent-de
     {
       existsSync: (p) => p === path.join(dir, '.credentials.yaml'),
       dshHomeDir: dir,
+      homeDotDsh: dir,
       profile: 'desktop',
       readFileSync: (p) => {
         if (p === profileYml) return yml;
@@ -154,6 +156,45 @@ test('probeLlmRoute：旧口径两文件齐 ok；0.2.1+ 认 profile 的 agent-de
   assert.match(modern.detail, /deepseek-account \/ deepseek-flash/);
 
   assert.strictEqual(dshHomeDir().endsWith(path.join('.dsh')), true, '缺省目录锚定 ~/.dsh');
+});
+
+test('probeLlmRoute：DSH_HOME 指向无路由目录时，仍扫真实 ~/.dsh——模型路由以你在 dsh 里配的为准（2026-11-27 真机误报）', () => {
+  // Arrange：宿主设了 DSH_HOME（数据家目录），但 dsh 的配置（含模型路由）仍在 ~/.dsh——
+  // 业主在 dsh 里怎么配的，工作台就用什么样的。体检必须认出这份配置，而不是报「未配置」。
+  const envHome = path.join(os.tmpdir(), 'fde-dshhome-empty-fake');
+  const realHome = path.join(os.tmpdir(), 'fde-realdotdsh-fake');
+  const routeYml = [
+    '- id: agent-default-model',
+    '  name: "@deepseek-ai/dsh-agent-default-model"',
+    '  config:',
+    '    provider: zai-coding-cn',
+    '    model: glm-5.3-flash',
+  ].join('\n');
+  const routeFile = path.join(realHome, 'profiles', 'headless', 'cordis.patch.yml');
+  // Act：envHome 全空；~/.dsh 的 headless profile 有业主配的路由
+  const r = probeLlmRoute(
+    {},
+    {
+      existsSync: () => false,
+      dshHomeDir: envHome,
+      homeDotDsh: realHome,
+      profile: 'headless',
+      readFileSync: (p) => {
+        if (p === routeFile) return routeYml;
+        throw new Error(`unexpected read: ${p}`);
+      },
+    }
+  );
+  // Assert
+  assert.strictEqual(r.ok, true, '体检认出 ~/.dsh 里业主配的路由');
+  assert.match(r.detail, /zai-coding-cn \/ glm-5.3-flash/);
+  assert.ok(r.detail.includes(realHome), 'detail 注明路由来自哪个目录');
+
+  // 两处都没有 → 失败，且如实列出扫过的目录
+  const none = probeLlmRoute({}, { existsSync: () => false, dshHomeDir: envHome, homeDotDsh: realHome });
+  assert.strictEqual(none.ok, false);
+  assert.ok(none.detail.includes(envHome) && none.detail.includes(realHome), '失败 detail 列出全部被扫目录');
+  assert.strictEqual(none.hint, HINTS.llmRoute);
 });
 
 test('probeGitea：ok 带 latency/apiVersion；401 hint 按状态区分；3s 预算超时按失败表达', async () => {
