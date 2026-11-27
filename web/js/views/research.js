@@ -125,8 +125,8 @@ function renderMain(opts = {}) {
     </div>`;
   wireMain(opts);
   // 对话流自动滚底(新发言/AI 回复后视线跟随)
-  const msgs = rootEl && rootEl.querySelector('#rs-msgs');
-  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  const msgsEl = rootEl && rootEl.querySelector('#rs-msgs');
+  if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
 }
 
 function wireMain(opts = {}) {
