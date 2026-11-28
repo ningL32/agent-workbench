@@ -201,6 +201,27 @@ test('probeLlmRoute：DSH_HOME 指向无路由目录时，仍扫真实 ~/.dsh—
   assert.strictEqual(none.hint, HINTS.llmRoute);
 });
 
+test('probeLlmRoute:env 家目录的路由优先于 ~/.dsh——实例子进程继承 DSH_HOME,报错配的 ~/.dsh 就是「假通过」(2026-11-28 真机抓出)', () => {
+  // Arrange:env 家目录有路由(验证实例形态);~/.dsh 也有**另一份**路由。
+  // 实例 spawn 的子进程继承 DSH_HOME → 实际生效的是 env 家目录那份;体检必须报它,不能报 ~/.dsh 的。
+  const envHome = path.join(os.tmpdir(), 'fde-envhome-route-fake');
+  const realHome = path.join(os.tmpdir(), 'fde-realdotdsh-route-fake');
+  const envRoute = path.join(envHome, 'profiles', 'headless', 'cordis.patch.yml');
+  const realRoute = path.join(realHome, 'profiles', 'headless', 'cordis.patch.yml');
+  const read = (p) => {
+    if (p === envRoute) return ['- id: agent-default-model', '  config:', '    provider: zai-coding-cn', '    model: glm-5.3-flash'].join('\n');
+    if (p === realRoute) return ['- id: agent-default-model', '  config:', '    provider: deepseek-account', '    model: deepseek-flash'].join('\n');
+    throw new Error(`unexpected read: ${p}`);
+  };
+  // Act
+  const r = probeLlmRoute({}, { existsSync: () => false, dshHomeDir: envHome, homeDotDsh: realHome, profile: 'headless', readFileSync: read });
+  // Assert
+  assert.strictEqual(r.ok, true);
+  assert.match(r.detail, /zai-coding-cn \/ glm-5.3-flash/, '报 env 家目录(实例子进程实际用)的路由');
+  assert.ok(r.detail.includes(envHome), 'detail 注明来自 env 家目录');
+  assert.doesNotMatch(r.detail, /deepseek-account/, '不得报 ~/.dsh 里那份不在生效的路由');
+});
+
 test('probeGitea：ok 带 latency/apiVersion；401 hint 按状态区分；3s 预算超时按失败表达', async () => {
   const cfg = { gitea: { baseUrl: 'https://gitea.example.com' } };
 
