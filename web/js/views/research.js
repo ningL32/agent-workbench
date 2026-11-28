@@ -322,6 +322,59 @@ function wireMain(opts = {}) {
       await openDetail(state.selectedId, { silent: true });
     } catch (e) { toast(e.message); dec.disabled = false; }
   });
+  // v2.9.91 语音输入(Web Speech API,浏览器原生;不支持时隐藏麦克风)。
+  // v2.9.99 恢复:这三段接线在 v2.9.92 布局改版时被整段弄丢,按钮成了死的——接线完备性由 test/web-wiring.test.js 守住。
+  const mic = main.querySelector('#rs-mic');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (mic && !SR) mic.hidden = true;
+  if (mic && SR) {
+    let recog = null;
+    mic.addEventListener('click', () => {
+      if (recog) { recog.stop(); return; }
+      const r = new SR();
+      r.lang = 'zh-CN';
+      r.interimResults = true;
+      const base = text ? text.value : '';
+      r.onresult = (ev) => {
+        let finalText = '';
+        let interim = '';
+        for (const res of ev.results) {
+          if (res.isFinal) finalText += res[0].transcript;
+          else interim += res[0].transcript;
+        }
+        if (text) text.value = (base ? base + ' ' : '') + finalText + interim;
+      };
+      r.onend = () => { recog = null; mic.classList.remove('recording'); };
+      r.onerror = () => { recog = null; mic.classList.remove('recording'); toast('语音识别失败,请用键盘输入'); };
+      recog = r;
+      mic.classList.add('recording');
+      mic.title = '录音中…点击停止';
+      r.start();
+    });
+  }
+  // v2.9.91 附件上传:选择即传(base64 JSON,后端抽正文进 AI 上下文),成功后显示芯片
+  const clip = main.querySelector('#rs-paperclip');
+  const fileInput = main.querySelector('#rs-file');
+  if (clip && fileInput) {
+    clip.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      for (const f of fileInput.files) {
+        if (f.size > 8 * 1024 * 1024) { toast(`附件 ${f.name} 超过 8MB 上限`, 'error'); continue; }
+        try {
+          const b64 = await new Promise((resolve, reject) => {
+            const rd = new FileReader();
+            rd.onload = () => resolve(String(rd.result).split(',')[1] || '');
+            rd.onerror = () => reject(new Error('读取失败'));
+            rd.readAsDataURL(f);
+          });
+          await apiPost(`/api/research/interviews/${state.selectedId}/attachments`, { name: f.name, dataBase64: b64 });
+          toast(`附件 ${f.name} 已上传`);
+        } catch (e) { toast(`附件 ${f.name} 上传失败: ${e.message}`); }
+      }
+      fileInput.value = '';
+      await openDetail(state.selectedId, { silent: true });
+    });
+  }
   const doExport = async (format) => {
     const iv = (state.detail && state.detail.interview) || {};
     try {
