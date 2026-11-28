@@ -2,7 +2,7 @@
 
 # 超级工作台（fde-console · Super Workbench）
 
-当前版本 v2.9.99
+当前版本 v2.9.100
 
 [![test](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml/badge.svg)](https://github.com/ningL32/agent-workbench/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

@@ -1600,3 +1600,13 @@ a.diary-src:hover { text-decoration: underline; }
 .rs-prop-note.is-warn { color: var(--yellow); }
 .rs-prop-note.is-bad { color: var(--red); }
 .rs-prop-note.is-ok { color: var(--green); }
+
+/* ---- v2.9.100:环境体检「修复口令」块(终端命令 + 发给 AI 的提示词) ---- */
+.setup-fix { margin-top: 8px; padding: 8px; border: 1px dashed var(--border-strong); border-radius: 8px; background: rgba(255, 255, 255, .02); }
+.sf-h { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--yellow); }
+.sf-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.sf-row:last-child { margin-bottom: 0; }
+.sf-tag { flex: 0 0 auto; margin-top: 2px; padding: 1px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; color: var(--muted); }
+.sf-cmd { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; align-self: center; }
+.sf-prompt { flex: 1; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+.setup-fix .btn { flex: 0 0 auto; }

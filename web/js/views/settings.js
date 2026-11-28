@@ -431,11 +431,18 @@ function drawCheckResult(r) {
   const items = Array.isArray(r.items) ? r.items : [];
   const failItems = items.filter((i) => i && i.ok === false);
   const when = r.checkedAt ? fmtClock(r.checkedAt) : '';
+  // v2.9.100 修复口令:命令/AI 提示词存 Map 而非 DOM 属性(多行文本进 data-attribute 不可靠),按钮按 key 取
+  const fixTexts = {};
   const sum = r.allOk
     ? `<div class="setup-sum ok">${icon('check-circle')}<b>环境就绪</b><span class="muted small">${items.length}/${items.length} 项通过${when ? ` · 检查于 ${esc(when)}` : ''}</span></div>`
     : `<div class="setup-sum bad">${icon('alert-triangle')}<b>${failItems.length} 项待配置</b><span class="muted small">${items.length - failItems.length}/${items.length} 项通过${when ? ` · 检查于 ${esc(when)}` : ''}</span></div>`;
   body.innerHTML = sum + `<div class="setup-grid">${items.map((it) => {
     const ok = it && it.ok !== false;
+    // 修复口令登记:key = 检查项id + 用途
+    if (it && it.fix && it.fix.command && it.fix.aiPrompt) {
+      fixTexts[`${it.id}-cmd`] = it.fix.command;
+      fixTexts[`${it.id}-prompt`] = it.fix.aiPrompt;
+    }
     // 可选组件（评审 P2：optional 字段前端消费）——未安装渲染中性「可选」徽标，不再假绿
     const optionalBadge = ok && it && it.optional
       ? '<span class="badge b-ro" title="可选组件：未安装只影响任务雷达对应源，其余功能不受影响">可选</span>'
@@ -448,14 +455,50 @@ function drawCheckResult(r) {
       </div>
       <div class="si-detail">${esc((it && it.detail) || '—')}</div>
       ${(!ok && it && it.hint) ? `<div class="setup-hint">${icon('alert-triangle')}<span>${esc(it.hint)}</span></div>` : ''}
+      ${(!ok && it && it.fix && it.fix.command && it.fix.aiPrompt) ? `<div class="setup-fix">
+        <div class="sf-h">${icon('zap')} 修复口令（二选一）</div>
+        <div class="sf-row"><span class="sf-tag">终端</span><code class="sf-cmd">${esc(it.fix.command)}</code><button type="button" class="btn ghost xs sf-copy" data-key="${esc(it.id)}-cmd">${icon('copy')}复制</button></div>
+        <div class="sf-row"><span class="sf-tag">AI</span><div class="sf-prompt">${esc(it.fix.aiPrompt)}</div><button type="button" class="btn ghost xs sf-copy" data-key="${esc(it.id)}-prompt">${icon('copy')}复制口令</button></div>
+      </div>` : ''}
     </div>`;
   }).join('')}</div>`;
+  // 复制按钮接线(渲染即绑:体检卡每次重画都会重建这批按钮)
+  body.querySelectorAll('.sf-copy').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const txt = fixTexts[b.dataset.key];
+      if (!txt) return;
+      const okCopy = await copyTextNow(txt);
+      toast(okCopy ? '已复制——粘贴到终端，或新开会话发给 AI' : '复制失败，请手动选择', okCopy ? 'success' : 'error');
+    });
+  });
   const btn = root.querySelector('#btn-check');
   if (btn) btn.innerHTML = `${icon('refresh-cw')}重新体检`;
   drawBanner(r);
 }
 
 // 新人引导条：allOk=false 时置顶 amber 条 + 锚点滚动；总览页不加载本视图，天然不出现（保持克制）
+/** 剪贴板统一助手(v2.9.100):clipboard API 优先,降级 execCommand;成功返回 true */
+async function copyTextNow(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* 降级 */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
+
 function drawBanner(r) {
   const root = rootEl;
   if (!root) return;

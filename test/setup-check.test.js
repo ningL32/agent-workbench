@@ -17,6 +17,7 @@ const path = require('path');
 
 const {
   runSetupCheck,
+  probeDws,
   probeLlmRoute,
   probeGitea,
   dshHomeDir,
@@ -357,4 +358,71 @@ test('路由级 GET /api/setup/check：轮询关闭 → gitea 项转中性可选
     app2.close();
     fs.rmSync(tmpDir2, { recursive: true, force: true });
   }
+});
+
+// ---------- v2.9.100 dws 登录态探测 + 修复口令 ----------
+
+/** 造一个真实存在的假 dws bin(resolveDwsBin 要求 configured 路径真实存在) */
+function fakeDwsBin(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-dwsbin-'));
+  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* Windows EPERM 可容忍 */ } });
+  const bin = path.join(dir, 'dws.exe');
+  fs.writeFileSync(bin, 'fake');
+  return { bin, cfg: { dingtalk: { dwsBin: bin } } };
+}
+
+test('probeDws 登录态:已登录 → ok:true + detail 带账号名', () => {
+  const { bin, cfg } = fakeDwsBin({ after() {} });
+  const r = probeDws(cfg, { dwsVersion: '1.0.59', authStatus: () => ({ authenticated: true, userName: '李宁' }) });
+  assert.strictEqual(r.ok, true);
+  assert.match(r.detail, /已登录（李宁）/);
+  assert.match(r.detail, /1\.0\.59/);
+  assert.strictEqual(r.hint, null);
+});
+
+test('probeDws 登录态:未登录 → ok:false + fix 口令(终端命令 + AI 提示词,含安全约束)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-dwsbin2-'));
+  const cfg = { dingtalk: { dwsBin: path.join(dir, 'dws.exe') } };
+  try {
+    fs.writeFileSync(cfg.dingtalk.dwsBin, 'fake');
+    const r = probeDws(cfg, { dwsVersion: '1.0.59', authStatus: () => ({ authenticated: false }) });
+    assert.strictEqual(r.ok, false, '未登录必须挡体检——否则新机器体检绿、首次同步被拒');
+    assert.strictEqual(r.hint, HINTS.dwsLogin);
+    assert.strictEqual(r.fix.command, 'dws auth login');
+    assert.match(r.fix.aiPrompt, /dws auth login/);
+    assert.match(r.fix.aiPrompt, /dws auth status/, '口令带验证步骤');
+    assert.match(r.fix.aiPrompt, /auth export/, '口令带安全约束(不得导出 token)');
+  } finally {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* EPERM 可容忍 */ }
+  }
+});
+
+test('probeDws 登录态:auth status 不可用(旧版 dws)→ 如实降级 ok:true「登录态未知」', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fde-dwsbin3-'));
+  const cfg = { dingtalk: { dwsBin: path.join(dir, 'dws.exe') } };
+  try {
+    fs.writeFileSync(cfg.dingtalk.dwsBin, 'fake');
+    const r = probeDws(cfg, { dwsVersion: '1.0.40', authStatus: () => ({ reason: '该版本 dws 无 auth 子命令' }) });
+    assert.strictEqual(r.ok, true, '旧版无 auth 子命令不得挡体检(降级不误伤)');
+    assert.match(r.detail, /登录态未知/);
+    assert.strictEqual(r.fix, undefined);
+  } finally {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* EPERM 可容忍 */ }
+  }
+});
+
+test('runSetupCheck:fix 字段透传到响应(只增不改——其余项无 fix 键)', async () => {
+  const r = await runSetupCheck({}, {
+    probeNode: okProbe('ok'),
+    probeDws: async () => ({ ok: false, detail: '未登录', hint: HINTS.dwsLogin, fix: { command: 'dws auth login', aiPrompt: '口令正文' } }),
+    probeLarkCli: okProbe('ok'),
+    probeDsh: okProbe('ok'),
+    probeLlmRoute: okProbe('ok'),
+    probeGitea: okProbe('ok'),
+  });
+  const dws = r.items.find((i) => i.id === 'dws');
+  assert.strictEqual(dws.ok, false);
+  assert.strictEqual(dws.fix.command, 'dws auth login');
+  assert.strictEqual(dws.fix.aiPrompt, '口令正文');
+  assert.ok(!('fix' in r.items.find((i) => i.id === 'node')), '无 fix 的项不得出现 fix 键');
 });
